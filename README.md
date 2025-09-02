@@ -1,11 +1,24 @@
-# ZKsync SSO ERC-7579 Contracts
+# Xsolla ZKsync Smart Contracts
 
-A user & developer friendly modular smart account implementation on ZKsync;
-simplifying user authentication, session management, and transaction processing.
+ERC-7579 compatible ZKsync SSO contracts with Xsolla Web3 product contracts integration.
 
-Aiming to be compliant with the [ERC-7579](https://erc7579.com/) standard.
+A user & developer friendly modular smart account implementation on ZKsync that integrates with Xsolla's Web3 product ecosystem, simplifying user authentication, session management, and transaction processing for gaming and digital commerce applications.
 
-Based on the [ERC-7579 reference implementation](https://github.com/erc7579/erc7579-implementation) by Rhinestone.
+Fully compliant with the [ERC-7579](https://erc7579.com/) standard for modular smart accounts.
+
+## Features
+
+- **ERC-7579 Compliance**: Full compatibility with the modular smart account standard
+- **ZKsync Integration**: Optimized for ZKsync's Layer 2 scaling solution
+- **Xsolla Web3 Integration**: Seamless integration with Xsolla's Web3 product ecosystem
+- **SSO Authentication**: Single Sign-On capabilities for enhanced user experience
+- **Session Management**: Advanced session handling for gaming and commerce applications
+- **Modular Architecture**: Extensible design with validator and executor modules
+- **Account Abstraction**: Simplified transaction flows and gas management
+
+## Architecture
+
+This implementation extends the [ERC-7579 reference implementation](https://github.com/erc7579/erc7579-implementation) by Rhinestone with Xsolla-specific enhancements for Web3 gaming and digital commerce use cases.
 
 > [!CAUTION]
 > The factory and module interfaces are not yet stable! Any contracts interfacing

@@ -1,7 +1,7 @@
 {
-  "name": "zksync-sso-contracts-7579",
-  "version": "0.1.0",
-  "description": "ERC-7579 compatible ZKsync SSO contracts",
+  "name": "xsolla-zk-smart-contracts",
+  "version": "0.0.1",
+  "description": "ERC-7579 compatible ZKsync SSO contracts with Xsolla Web3 product contracts integration",
   "main": "index.js",
   "scripts": {},
   "keywords": [
@@ -9,7 +9,7 @@
     "account-abstraction",
     "ERC7579"
   ],
-  "author": "Matter Labs <zksync.io>",
+  "author": "Matter Labs <zksync.io> & Oleg Bedrin <o.bedrin@xsolla.com>",
   "license": "MIT",
   "packageManager": "pnpm@10.13.0"
 }
