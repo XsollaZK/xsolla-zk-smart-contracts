@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Base64 } from '@openzeppelin-contracts-5.4.0/utils/Base64.sol';
+import { Base64 } from '@openzeppelin/contracts/utils/Base64.sol';
 
 /// @title SVGIconsLib
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3

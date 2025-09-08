@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { IERC20 } from '@openzeppelin-contracts-5.4.0/token/ERC20/IERC20.sol';
-import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
-import { Address } from '@openzeppelin-contracts-5.4.0/utils/Address.sol';
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
 
 import { BaseFeeCollectorInterface } from '../interfaces/drafts/BaseFeeCollectorInterface.sol';
 import { BaseFeeCollectorEventsAndErrors } from '../interfaces/drafts/BaseFeeCollectorEventsAndErrors.sol'; 

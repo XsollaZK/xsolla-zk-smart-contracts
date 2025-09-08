@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { ERC1155 } from '@openzeppelin-contracts-5.4.0/token/ERC1155/ERC1155.sol';
-import { ERC1155Supply } from '@openzeppelin-contracts-5.4.0/token/ERC1155/extensions/ERC1155Supply.sol';
-import { ERC2981 } from '@openzeppelin-contracts-5.4.0/token/common/ERC2981.sol';
-import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
-import { Pausable } from '@openzeppelin-contracts-5.4.0/utils/Pausable.sol';
-import { Address } from '@openzeppelin-contracts-5.4.0/utils/Address.sol';
+import { ERC1155 } from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import { ERC1155Supply } from '@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol';
+import { ERC2981 } from '@openzeppelin/contracts/token/common/ERC2981.sol';
+import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
+import { Pausable } from '@openzeppelin/contracts/utils/Pausable.sol';
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
 
 /// @title Collection template with royalties for ERC-1155
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>

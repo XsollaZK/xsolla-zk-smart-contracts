@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { EnumerableSet } from "@openzeppelin-contracts-5.4.0/utils/structs/EnumerableSet.sol";
-import { AccessControl } from "@openzeppelin-contracts-5.4.0/access/AccessControl.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title AddressesReportConfig
 /// @author Oleg Bedrin - Xsolla Web3 <o.bedrin@xsolla.com>

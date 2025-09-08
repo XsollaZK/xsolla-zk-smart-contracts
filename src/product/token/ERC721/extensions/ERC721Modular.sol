@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { ERC721 } from '@openzeppelin-contracts-5.4.0/token/ERC721/ERC721.sol';
-import { ERC721Enumerable } from '@openzeppelin-contracts-5.4.0/token/ERC721/extensions/ERC721Enumerable.sol';
-import { ERC721URIStorage } from '@openzeppelin-contracts-5.4.0/token/ERC721/extensions/ERC721URIStorage.sol';
-import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
+import { ERC721 } from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import { ERC721Enumerable } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
+import { ERC721URIStorage } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol';
+import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
 
 import { SVGIconsLib } from '../../../libraries/SVGIconsLib.sol';
 import { IEIP721Mintable } from '../../../interfaces/stable/IEIP721Mintable.sol';

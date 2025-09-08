@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 
 import { ERC20Modular } from './extensions/ERC20Modular.sol';
 

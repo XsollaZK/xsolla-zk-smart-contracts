@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { ERC721Enumerable, ERC721 } from '@openzeppelin-contracts-5.4.0/token/ERC721/extensions/ERC721Enumerable.sol';
-import { ERC721Royalty } from '@openzeppelin-contracts-5.4.0/token/ERC721/extensions/ERC721Royalty.sol';
-import { ERC721URIStorage } from '@openzeppelin-contracts-5.4.0/token/ERC721/extensions/ERC721URIStorage.sol';
-import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
-import { Pausable } from '@openzeppelin-contracts-5.4.0/utils/Pausable.sol';
-import { Address } from '@openzeppelin-contracts-5.4.0/utils/Address.sol';
+import { ERC721Enumerable, ERC721 } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
+import { ERC721Royalty } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol';
+import { ERC721URIStorage } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol';
+import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
+import { Pausable } from '@openzeppelin/contracts/utils/Pausable.sol';
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
 
 import { IEIP721Mintable } from '../../../interfaces/stable/IEIP721Mintable.sol';
 
@@ -406,20 +406,16 @@ contract ERC721RoyaltyManaged is ERC721Enumerable, ERC721Royalty, ERC721URIStora
         emit TokensMinted(recipient, amount, firstTokenId);
     }
 
-    /// @dev Override _burn to clear royalty info and token URI
-    function _burn(uint256 tokenId) internal virtual override(ERC721, ERC721Royalty, ERC721URIStorage) {
-        ERC721Royalty._burn(tokenId);
-        ERC721URIStorage._burn(tokenId);
+    /// @inheritdoc ERC721Enumerable
+    function _update(
+        address to, uint256 tokenId, address auth
+    ) internal virtual override(ERC721, ERC721Enumerable) returns (address) {
+        return ERC721Enumerable._update(to, tokenId, auth);
     }
 
-    /// @dev Hook called before token transfer
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 firstTokenId,
-        uint256 batchSize
-    ) internal virtual override(ERC721, ERC721Enumerable) whenNotPaused {
-        ERC721Enumerable._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+    /// @inheritdoc ERC721Enumerable
+    function _increaseBalance(address account, uint128 value) internal virtual override(ERC721, ERC721Enumerable) {
+        ERC721Enumerable._increaseBalance(account, value);
     }
 
     /// @notice Override _baseURI to return the stored base URI

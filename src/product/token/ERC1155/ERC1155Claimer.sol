@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 
 import { ERC1155Modular } from './extensions/ERC1155Modular.sol';
 
@@ -34,7 +34,7 @@ contract ERC1155Claimer is Ownable {
 
     /// @notice Initializes the contract with the token to be claimed.
     /// @param _tokenToClaim The ERC1155 token contract address.
-    constructor(ERC1155Modular _tokenToClaim) {
+    constructor(ERC1155Modular _tokenToClaim) Ownable(_msgSender()) {
         tokenToClaim = _tokenToClaim;
         tokenIdToClaim = 0;
         amountToClaim = 100 ether;

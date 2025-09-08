@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { ERC1155 } from '@openzeppelin-contracts-5.4.0/token/ERC1155/ERC1155.sol';
-import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
+import { ERC1155 } from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
 
 import { ISetBaseURI } from '../../../interfaces/drafts/ISetBaseURI.sol';
 
