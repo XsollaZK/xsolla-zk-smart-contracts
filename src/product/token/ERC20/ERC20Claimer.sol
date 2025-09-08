@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
+import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
 
 import { ERC20Modular } from './extensions/ERC20Modular.sol';
 
@@ -30,7 +30,7 @@ contract ERC20Claimer is Ownable {
 
     /// @notice Initializes the contract with the token to be claimed.
     /// @param _tokenToClaim The ERC20 token contract address.
-    constructor(ERC20Modular _tokenToClaim) {
+    constructor(ERC20Modular _tokenToClaim) Ownable(_msgSender()) {
         tokenToClaim = _tokenToClaim;
         amountToClaim = 100 ether;
     }

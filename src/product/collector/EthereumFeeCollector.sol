@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { Address } from "@openzeppelin-contracts-5.4.0/utils/Address.sol";
 
 import { BaseFeeCollector } from "./BaseFeeCollector.sol";
-import { EthereumFeeCollectorInterface } from "../../interfaces/drafts/EthereumFeeCollectorInterface.sol";
-import { IWETH } from "../../interfaces/stable/IWETH.sol";
+import { EthereumFeeCollectorInterface } from "../interfaces/drafts/EthereumFeeCollectorInterface.sol";
+import { IWETH } from "../interfaces/stable/IWETH.sol";
 
 /// @title   EthereumFeeCollector
 /// @author  OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3

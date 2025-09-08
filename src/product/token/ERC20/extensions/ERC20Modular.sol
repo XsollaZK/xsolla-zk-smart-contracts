@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
-import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import { ERC20Pausable } from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol';
-import { ERC20Permit } from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
+import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
+import { ERC20 } from '@openzeppelin-contracts-5.4.0/token/ERC20/ERC20.sol';
+import { ERC20Pausable } from '@openzeppelin-contracts-5.4.0/token/ERC20/extensions/ERC20Pausable.sol';
+import { ERC20Permit } from '@openzeppelin-contracts-5.4.0/token/ERC20/extensions/ERC20Permit.sol';
 
 /// @title ERC20Modular
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
@@ -56,7 +56,7 @@ contract ERC20Modular is ERC20, ERC20Pausable, AccessControl, ERC20Permit {
     }
 
     /// @inheritdoc ERC20
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override(ERC20, ERC20Pausable) {
-        ERC20Pausable._beforeTokenTransfer(from, to, amount);
+    function _update(address from, address to, uint256 amount) internal virtual override(ERC20, ERC20Pausable) {
+        ERC20Pausable._update(from, to, amount);
     }
 }

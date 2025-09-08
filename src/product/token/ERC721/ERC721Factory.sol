@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { IERC721 } from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
+import { IERC721 } from '@openzeppelin-contracts-5.4.0/token/ERC721/IERC721.sol';
+import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
 
 import { ERC721Modular } from './extensions/ERC721Modular.sol';
 import { SVGIconsLib } from '../../libraries/SVGIconsLib.sol';
@@ -32,6 +32,9 @@ contract ERC721Factory is Ownable {
 
     /// @notice Default IPFS image URI.
     string public constant IPFS_DEFAULT_IMAGE = "bafkreie7ohywtosou76tasm7j63yigtzxe7d5zqus4zu3j6oltvgtibeom"; // Hello IPFS image.
+
+    /// @notice The constructor sets the initial owner to the deployer.
+    constructor() Ownable(_msgSender()) {}
 
     /// @notice Deploys a new collection with default configurations.
     /// @param _name The name of the collection.

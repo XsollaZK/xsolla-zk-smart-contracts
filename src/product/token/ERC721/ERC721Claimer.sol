@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
+import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
 
 import { ERC721Modular } from './extensions/ERC721Modular.sol';
 
@@ -36,7 +36,7 @@ contract ERC721Claimer is Ownable {
 
     /// @notice Initializes the contract with the token to be claimed.
     /// @param _tokenToClaim The ERC721 token contract address.
-    constructor(ERC721Modular _tokenToClaim) {
+    constructor(ERC721Modular _tokenToClaim) Ownable(_msgSender()) {
         if (address(_tokenToClaim) == address(0)) {
             revert InvalidTokenAddress();
         }

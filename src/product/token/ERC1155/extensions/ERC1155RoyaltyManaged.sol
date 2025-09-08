@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { ERC1155 } from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
-import { ERC1155Supply } from '@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol';
-import { ERC2981 } from '@openzeppelin/contracts/token/common/ERC2981.sol';
-import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
-import { Pausable } from '@openzeppelin/contracts/security/Pausable.sol';
-import { Address } from '@openzeppelin/contracts/utils/Address.sol';
+import { ERC1155 } from '@openzeppelin-contracts-5.4.0/token/ERC1155/ERC1155.sol';
+import { ERC1155Supply } from '@openzeppelin-contracts-5.4.0/token/ERC1155/extensions/ERC1155Supply.sol';
+import { ERC2981 } from '@openzeppelin-contracts-5.4.0/token/common/ERC2981.sol';
+import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
+import { Pausable } from '@openzeppelin-contracts-5.4.0/utils/Pausable.sol';
+import { Address } from '@openzeppelin-contracts-5.4.0/utils/Address.sol';
 
 /// @title Collection template with royalties for ERC-1155
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
@@ -346,22 +346,9 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
         emit TokensBatchMinted(recipient, tokenIds, amounts);
     }
 
-    /// @dev Hook called before any token transfer, including minting and burning
-    /// @param operator Address performing the transfer
-    /// @param from Source address (zero for minting)
-    /// @param to Destination address (zero for burning)
-    /// @param ids Array of token IDs being transferred
-    /// @param amounts Array of amounts being transferred
-    /// @param data Additional data with no specified format
-    function _beforeTokenTransfer(
-        address operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) internal virtual override(ERC1155, ERC1155Supply) whenNotPaused {
-        ERC1155Supply._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+    /// @inheritdoc ERC1155Supply
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values) internal virtual override(ERC1155, ERC1155Supply) {
+        super._update(from, to, ids, values);
     }
 
     /// @notice Check if contract supports a given interface

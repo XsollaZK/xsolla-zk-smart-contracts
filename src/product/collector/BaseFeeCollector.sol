@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
-import { Address } from '@openzeppelin/contracts/utils/Address.sol';
+import { IERC20 } from '@openzeppelin-contracts-5.4.0/token/ERC20/IERC20.sol';
+import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
+import { Address } from '@openzeppelin-contracts-5.4.0/utils/Address.sol';
 
-import { BaseFeeCollectorInterface } from '../../interfaces/drafts/BaseFeeCollectorInterface.sol';
-import { BaseFeeCollectorEventsAndErrors } from '../../interfaces/drafts/BaseFeeCollectorEventsAndErrors.sol'; 
+import { BaseFeeCollectorInterface } from '../interfaces/drafts/BaseFeeCollectorInterface.sol';
+import { BaseFeeCollectorEventsAndErrors } from '../interfaces/drafts/BaseFeeCollectorEventsAndErrors.sol'; 
 
 /// @title   BaseFeeCollector
 /// @author  OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
@@ -24,11 +24,15 @@ contract BaseFeeCollector is Ownable, BaseFeeCollectorInterface, BaseFeeCollecto
     /// @dev Throws if called by any account other than the owner or
     ///      operator.
     modifier isOperator() {
-        if (msg.sender != _operator && msg.sender != owner()) {
+        address sender = _msgSender();
+        if (sender != _operator && sender != owner()) {
             revert InvalidOperator();
         }
         _;
     }
+
+    /// @notice The constructor sets the initial owner to the deployer.
+    constructor() Ownable(_msgSender()) {}
 
     /// @notice Withdrawals the given amount of ERC20 tokens from the provided
     ///         contract address. Requires the caller to have the operator role,

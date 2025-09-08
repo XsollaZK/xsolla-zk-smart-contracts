@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
-import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol';
+import { Ownable } from '@openzeppelin-contracts-5.4.0/access/Ownable.sol';
+import { AccessControl } from '@openzeppelin-contracts-5.4.0/access/AccessControl.sol';
 
 import { ERC1155Modular } from './extensions/ERC1155Modular.sol';
 
@@ -13,6 +13,9 @@ contract ERC1155Factory is Ownable {
     /// @notice Emitted when a new collection is deployed.
     /// @param newCollectionAddress The address of the newly deployed collection.
     event NewCollectionDeployed(address indexed newCollectionAddress);
+
+    /// @notice The constructor sets the initial owner to the deployer.
+    constructor() Ownable(_msgSender()) {}
 
     /// @notice Deploys a new ERC1155 collection with a specified base URI.
     /// @param baseURI The base URI for the new collection.

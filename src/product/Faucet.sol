@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Ownable } from "@openzeppelin/contracts-hardhat-zksync-upgradable/access/Ownable.sol";
-import { Address } from "@openzeppelin/contracts-hardhat-zksync-upgradable/utils/Address.sol";
+import { Ownable } from "@openzeppelin-contracts-5.4.0/access/Ownable.sol";
+import { Address } from "@openzeppelin-contracts-5.4.0/utils/Address.sol";
 
 /// @title Faucet
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
@@ -39,7 +39,7 @@ contract Faucet is Ownable {
     mapping(address => uint256) public lastClaimed;
 
     /// @notice Initializes the contract with the owner set to the deployer
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(_msgSender()) {}
 
     /// @notice Allows users to claim ETH from the faucet
     /// @dev Users must send exact portion amount and wait 24 hours between claims
