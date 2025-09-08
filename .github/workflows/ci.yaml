@@ -12,7 +12,7 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.4.0
       - name: Install dependencies
@@ -24,7 +24,7 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.4.0
       - name: Install dependencies
@@ -32,20 +32,77 @@ jobs:
       - name: Test
         run: forge test
 
+  coverage:
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.4.0
+      - name: Install dependencies
+        run: forge soldeer install
+      - name: Generate coverage
+        run: forge coverage --ir-minimum --no-match-coverage 'script|test' --report lcov
+      - uses: kefasjw/lcov-pull-request-report@v1
+        with:
+          lcov-file: lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   slither:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.4.0
       - name: Install dependencies
         run: forge soldeer install
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.8
+          python-version: 3.13
       - name: Install Slither
         run: pip install slither-analyzer
       - name: Run Slither
         run: slither --config ./slither.config.json .
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.4.0
+
+      - name: Install dependencies
+        run: forge soldeer install
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/Jod
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install -r --frozen-lockfile
+
+      - name: Run anvil
+        run: pnpm anvil &
+
+      - name: Run bundler
+        run: pnpm bundler &
+
+      - name: Deploy contracts
+        run: pnpm deploy-test
+
+      - name: Run integration test
+        run: pnpm bundler-test
