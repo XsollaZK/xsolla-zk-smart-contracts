@@ -9,7 +9,7 @@ import { AccessControl } from '@openzeppelin/contracts/access/AccessControl.sol'
 import { SVGIconsLib } from '../../../libraries/SVGIconsLib.sol';
 import { IEIP721Mintable } from '../../../interfaces/stable/IEIP721Mintable.sol';
 
-/// @title BaseERC721
+/// @title ERC721Modular
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
 /// @notice ERC721Modular is a base contract for ERC721 tokens with SVG icons and IPFS support.
 /// @custom:include-in-addresses-report false
@@ -162,5 +162,5 @@ contract ERC721Modular is ERC721, ERC721Enumerable, ERC721URIStorage, AccessCont
     /// @inheritdoc ERC721Enumerable
     function _increaseBalance(address account, uint128 value) internal virtual override(ERC721, ERC721Enumerable) {
         super._increaseBalance(account, value);
-    }   
+    }
 }
