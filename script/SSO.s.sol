@@ -19,14 +19,14 @@ contract SSO is DeployStage {
         vm.startBroadcast();
 
         defaultModules = new address[](4);
-        defaultModules[0] = _makeProxy(address(new EOAKeyValidator()));
-        defaultModules[1] = _makeProxy(address(new SessionKeyValidator()));
-        defaultModules[2] = _makeProxy(address(new WebAuthnValidator()));
-        defaultModules[3] = _makeProxy(address(new GuardianExecutor(defaultModules[2], defaultModules[0])));
+        defaultModules[0] = _makeTUP(address(new EOAKeyValidator()));
+        defaultModules[1] = _makeTUP(address(new SessionKeyValidator()));
+        defaultModules[2] = _makeTUP(address(new WebAuthnValidator()));
+        defaultModules[3] = _makeTUP(address(new GuardianExecutor(defaultModules[2], defaultModules[0])));
 
         address accountImpl = address(new ModularSmartAccount());
         address beacon = address(new UpgradeableBeacon(accountImpl, msg.sender));
-        factory = _makeProxy(address(new MSAFactory(beacon)));
+        factory = _makeTUP(address(new MSAFactory(beacon)));
 
         vm.stopBroadcast();
 
