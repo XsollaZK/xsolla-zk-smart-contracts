@@ -83,4 +83,154 @@ contract EIP721 is DeployStage {
         
         vm.stopBroadcast();
     }
+
+    function deployBasicERC721(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply
+    ) external returns (ERC721Modular) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.toggleMinting();
+        
+        vm.stopBroadcast();
+        return modularERC721;
+    }
+
+    function deployERC721WithClaimer(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        uint256 claimAmount
+    ) external returns (ERC721Modular, ERC721Claimer) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.toggleMinting();
+        
+        erc721Claimer = new ERC721Claimer(modularERC721);
+        erc721Claimer.setAmountToClaim(claimAmount);
+        modularERC721.grantRole(modularERC721.MINTER_ROLE(), address(erc721Claimer));
+        
+        vm.stopBroadcast();
+        return (modularERC721, erc721Claimer);
+    }
+
+    function deployERC721WithSVG(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        SVGIconsLib.Field[8] memory fields
+    ) external returns (ERC721Modular) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.setDefaultFields(fields);
+        modularERC721.toggleMinting();
+        modularERC721.toggleSvg();
+        
+        vm.stopBroadcast();
+        return modularERC721;
+    }
+
+    function deployERC721WithIPFS(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        string memory ipfsHash,
+        string memory baseURI
+    ) external returns (ERC721Modular) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.setIpfsDefaultImage(ipfsHash);
+        if (bytes(baseURI).length > 0) {
+            modularERC721.setBaseUri(baseURI);
+        }
+        modularERC721.toggleMinting();
+        
+        vm.stopBroadcast();
+        return modularERC721;
+    }
+
+    function deployERC721WithMultipleClaimers(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        uint256[] memory claimAmounts
+    ) external returns (ERC721Modular, ERC721Claimer[] memory) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.toggleMinting();
+        
+        ERC721Claimer[] memory claimers = new ERC721Claimer[](claimAmounts.length);
+        for (uint i = 0; i < claimAmounts.length; i++) {
+            claimers[i] = new ERC721Claimer(modularERC721);
+            claimers[i].setAmountToClaim(claimAmounts[i]);
+            modularERC721.grantRole(modularERC721.MINTER_ROLE(), address(claimers[i]));
+        }
+        
+        vm.stopBroadcast();
+        return (modularERC721, claimers);
+    }
+
+    function deployCompleteEcosystem(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        string memory ipfsDefaultImage,
+        SVGIconsLib.Field[8] memory defaultFields,
+        uint256 claimAmount,
+        string memory baseURI
+    ) external returns (ERC721Factory, ERC721Modular, ERC721Claimer) {
+        vm.startBroadcast();
+        
+        erc721Factory = new ERC721Factory();
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        
+        modularERC721.setDefaultFields(defaultFields);
+        modularERC721.setIpfsDefaultImage(ipfsDefaultImage);
+        if (bytes(baseURI).length > 0) {
+            modularERC721.setBaseUri(baseURI);
+        }
+        modularERC721.toggleMinting();
+        
+        erc721Claimer = new ERC721Claimer(modularERC721);
+        erc721Claimer.setAmountToClaim(claimAmount);
+        modularERC721.grantRole(modularERC721.MINTER_ROLE(), address(erc721Claimer));
+        
+        vm.stopBroadcast();
+        return (erc721Factory, modularERC721, erc721Claimer);
+    }
+
+    function deployMinimalERC721(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply
+    ) external returns (ERC721Modular) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        
+        vm.stopBroadcast();
+        return modularERC721;
+    }
+
+    function deployERC721WithCustomMinter(
+        string memory name,
+        string memory symbol,
+        uint256 maxSupply,
+        address customMinter
+    ) external returns (ERC721Modular) {
+        vm.startBroadcast();
+        
+        modularERC721 = new ERC721Modular(name, symbol, maxSupply);
+        modularERC721.grantRole(modularERC721.MINTER_ROLE(), customMinter);
+        modularERC721.toggleMinting();
+        
+        vm.stopBroadcast();
+        return modularERC721;
+    }
 }

@@ -43,6 +43,6 @@ contract SSO is DeployStage {
 
     function run() public {
         (address factoryAddr, address[] memory modules) = deployFactory();
-        _deployAccount(factoryAddr, modules);
+        _deployAccount(factoryAddr, modules, DEFAULT_ACCOUNT_ID);
     }
 }

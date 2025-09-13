@@ -64,4 +64,150 @@ contract EIP1155 is DeployStage {
         
         vm.stopBroadcast();
     }
+
+    function deployBasicERC1155(
+        string memory baseURI
+    ) external returns (ERC1155Modular) {
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        
+        vm.stopBroadcast();
+        return modularERC1155;
+    }
+
+    function deployERC1155WithClaimer(
+        string memory baseURI,
+        uint256 claimAmount,
+        uint256 tokenIdToClaim
+    ) external returns (ERC1155Modular, ERC1155Claimer) {
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        
+        erc1155Claimer = new ERC1155Claimer(modularERC1155);
+        erc1155Claimer.setAmountToClaim(claimAmount);
+        erc1155Claimer.setTokenIdToClaim(tokenIdToClaim);
+        modularERC1155.grantRole(modularERC1155.MINTER_ROLE(), address(erc1155Claimer));
+        
+        vm.stopBroadcast();
+        return (modularERC1155, erc1155Claimer);
+    }
+
+    function deployERC1155WithBurning(
+        string memory baseURI
+    ) external returns (ERC1155Modular) {
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        modularERC1155.toggleBurning();
+        
+        vm.stopBroadcast();
+        return modularERC1155;
+    }
+
+    function deployERC1155WithMultipleClaimers(
+        string memory baseURI,
+        uint256[] memory claimAmounts,
+        uint256[] memory tokenIds
+    ) external returns (ERC1155Modular, ERC1155Claimer[] memory) {
+        require(claimAmounts.length == tokenIds.length, "Arrays length mismatch");
+        
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        
+        ERC1155Claimer[] memory claimers = new ERC1155Claimer[](claimAmounts.length);
+        for (uint i = 0; i < claimAmounts.length; i++) {
+            claimers[i] = new ERC1155Claimer(modularERC1155);
+            claimers[i].setAmountToClaim(claimAmounts[i]);
+            claimers[i].setTokenIdToClaim(tokenIds[i]);
+            modularERC1155.grantRole(modularERC1155.MINTER_ROLE(), address(claimers[i]));
+        }
+        
+        vm.stopBroadcast();
+        return (modularERC1155, claimers);
+    }
+
+    function deployCompleteEcosystem(
+        string memory baseURI,
+        uint256 claimAmount,
+        uint256 tokenIdToClaim,
+        bool enableBurning
+    ) external returns (ERC1155Factory, ERC1155Modular, ERC1155Claimer) {
+        vm.startBroadcast();
+        
+        erc1155Factory = new ERC1155Factory();
+        modularERC1155 = new ERC1155Modular();
+        
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        if (enableBurning) modularERC1155.toggleBurning();
+        
+        erc1155Claimer = new ERC1155Claimer(modularERC1155);
+        erc1155Claimer.setAmountToClaim(claimAmount);
+        erc1155Claimer.setTokenIdToClaim(tokenIdToClaim);
+        modularERC1155.grantRole(modularERC1155.MINTER_ROLE(), address(erc1155Claimer));
+        
+        vm.stopBroadcast();
+        return (erc1155Factory, modularERC1155, erc1155Claimer);
+    }
+
+    function deployMinimalERC1155() external returns (ERC1155Modular) {
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        
+        vm.stopBroadcast();
+        return modularERC1155;
+    }
+
+    function deployERC1155WithCustomMinter(
+        string memory baseURI,
+        address customMinter
+    ) external returns (ERC1155Modular) {
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.grantRole(modularERC1155.MINTER_ROLE(), customMinter);
+        modularERC1155.toggleMinting();
+        
+        vm.stopBroadcast();
+        return modularERC1155;
+    }
+
+    function deployERC1155GameAssets(
+        string memory baseURI,
+        uint256[] memory tokenIds,
+        uint256[] memory claimAmounts
+    ) external returns (ERC1155Modular, ERC1155Claimer[] memory) {
+        require(tokenIds.length == claimAmounts.length, "Arrays length mismatch");
+        
+        vm.startBroadcast();
+        
+        modularERC1155 = new ERC1155Modular();
+        modularERC1155.setBaseURI(baseURI);
+        modularERC1155.toggleMinting();
+        modularERC1155.toggleBurning();
+        
+        ERC1155Claimer[] memory claimers = new ERC1155Claimer[](tokenIds.length);
+        for (uint i = 0; i < tokenIds.length; i++) {
+            claimers[i] = new ERC1155Claimer(modularERC1155);
+            claimers[i].setAmountToClaim(claimAmounts[i]);
+            claimers[i].setTokenIdToClaim(tokenIds[i]);
+            modularERC1155.grantRole(modularERC1155.MINTER_ROLE(), address(claimers[i]));
+        }
+        
+        vm.stopBroadcast();
+        return (modularERC1155, claimers);
+    }
 }

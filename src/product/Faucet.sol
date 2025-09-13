@@ -63,7 +63,7 @@ contract Faucet is Ownable {
     function availableToFaucet(
         address destination
     ) public view returns (FaucetAvailability memory availability) {
-        if (block.timestamp <= lastClaimed[destination] + 24 hours) {
+        if (block.timestamp < lastClaimed[destination] + 24 hours) {
             return FaucetAvailability(false, "Claim not allowed yet");
         }
         return FaucetAvailability(true, "");

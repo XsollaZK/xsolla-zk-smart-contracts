@@ -34,7 +34,7 @@ contract EIP20 is DeployStage {
         console.log("ERC20Claimer:", address(erc20Claimer));
     }
 
-    function deployWithCustomConfig(
+    function deployUtilizingFactoryWithCustomConfig(
         string memory name,
         string memory symbol,
         address defaultAdmin,
@@ -52,5 +52,123 @@ contract EIP20 is DeployStage {
         modularERC20.grantRole(modularERC20.MINTER_ROLE(), address(erc20Claimer));
         
         vm.stopBroadcast();
+    }
+
+    function deployBasicERC20(
+        string memory name,
+        string memory symbol,
+        address owner
+    ) external returns (ERC20Modular) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, owner, owner, owner);
+        
+        vm.stopBroadcast();
+        return modularERC20;
+    }
+
+    function deployERC20WithSeparateRoles(
+        string memory name,
+        string memory symbol,
+        address defaultAdmin,
+        address pauser,
+        address minter
+    ) external returns (ERC20Modular) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, defaultAdmin, pauser, minter);
+        
+        vm.stopBroadcast();
+        return modularERC20;
+    }
+
+    function deployERC20WithClaimer(
+        string memory name,
+        string memory symbol,
+        address defaultAdmin,
+        address pauser,
+        address minter,
+        uint256 claimAmount
+    ) external returns (ERC20Modular, ERC20Claimer) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, defaultAdmin, pauser, minter);
+        erc20Claimer = new ERC20Claimer(modularERC20);
+        erc20Claimer.setAmountToClaim(claimAmount);
+        modularERC20.grantRole(modularERC20.MINTER_ROLE(), address(erc20Claimer));
+        
+        vm.stopBroadcast();
+        return (modularERC20, erc20Claimer);
+    }
+
+    function deployERC20WithMultipleClaimers(
+        string memory name,
+        string memory symbol,
+        address defaultAdmin,
+        address pauser,
+        address minter,
+        uint256[] memory claimAmounts
+    ) external returns (ERC20Modular, ERC20Claimer[] memory) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, defaultAdmin, pauser, minter);
+        
+        ERC20Claimer[] memory claimers = new ERC20Claimer[](claimAmounts.length);
+        for (uint i = 0; i < claimAmounts.length; i++) {
+            claimers[i] = new ERC20Claimer(modularERC20);
+            claimers[i].setAmountToClaim(claimAmounts[i]);
+            modularERC20.grantRole(modularERC20.MINTER_ROLE(), address(claimers[i]));
+        }
+        
+        vm.stopBroadcast();
+        return (modularERC20, claimers);
+    }
+
+    function deployCompleteEcosystem(
+        string memory name,
+        string memory symbol,
+        address defaultAdmin,
+        address pauser,
+        address minter,
+        uint256 claimAmount
+    ) external returns (ERC20Factory, ERC20Modular, ERC20Claimer) {
+        vm.startBroadcast();
+        
+        erc20Factory = new ERC20Factory();
+        modularERC20 = new ERC20Modular(name, symbol, defaultAdmin, pauser, minter);
+        erc20Claimer = new ERC20Claimer(modularERC20);
+        erc20Claimer.setAmountToClaim(claimAmount);
+        modularERC20.grantRole(modularERC20.MINTER_ROLE(), address(erc20Claimer));
+        
+        vm.stopBroadcast();
+        return (erc20Factory, modularERC20, erc20Claimer);
+    }
+
+    function deployMinimalERC20(
+        string memory name,
+        string memory symbol
+    ) external returns (ERC20Modular) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, msg.sender, msg.sender, msg.sender);
+        
+        vm.stopBroadcast();
+        return modularERC20;
+    }
+
+    function deployERC20WithCustomMinter(
+        string memory name,
+        string memory symbol,
+        address defaultAdmin,
+        address pauser,
+        address customMinter
+    ) external returns (ERC20Modular) {
+        vm.startBroadcast();
+        
+        modularERC20 = new ERC20Modular(name, symbol, defaultAdmin, pauser, defaultAdmin);
+        modularERC20.grantRole(modularERC20.MINTER_ROLE(), customMinter);
+        
+        vm.stopBroadcast();
+        return modularERC20;
     }
 }

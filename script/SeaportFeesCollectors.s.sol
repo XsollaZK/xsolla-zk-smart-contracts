@@ -103,6 +103,45 @@ contract SeaportFeesCollectors is DeployStage {
         }
     }
 
+    /// @notice Assign operator to fee collector
+    /// @param collector The fee collector contract (0 = Base, 1 = Ethereum)
+    /// @param operatorToAssign The operator address to assign
+    function assignOperator(uint8 collector, address operatorToAssign) external {
+        if (collector == 0) {
+            if (address(baseFeeCollector) == address(0)) {
+                revert BaseFeeCollectorNotDeployed();
+            }
+            baseFeeCollector.assignOperator(operatorToAssign);
+        } else if (collector == 1) {
+            if (address(ethereumFeeCollector) == address(0)) {
+                revert EthereumFeeCollectorNotDeployed();
+            }
+            ethereumFeeCollector.assignOperator(operatorToAssign);
+        } else {
+            revert InvalidCollectorType();
+        }
+    }
+
+    /// @notice Check if address is a withdrawal wallet
+    /// @param collector The fee collector contract (0 = Base, 1 = Ethereum)
+    /// @param wallet The wallet address to check
+    /// @return Whether the wallet is a valid withdrawal wallet
+    function isWithdrawalWallet(uint8 collector, address wallet) external view returns (bool) {
+        if (collector == 0) {
+            if (address(baseFeeCollector) == address(0)) {
+                revert BaseFeeCollectorNotDeployed();
+            }
+            return baseFeeCollector.isWithdrawalWallet(wallet);
+        } else if (collector == 1) {
+            if (address(ethereumFeeCollector) == address(0)) {
+                revert EthereumFeeCollectorNotDeployed();
+            }
+            return ethereumFeeCollector.isWithdrawalWallet(wallet);
+        } else {
+            revert InvalidCollectorType();
+        }
+    }
+
     function getDeployedAddresses() external view returns (address, address) {
         return (address(baseFeeCollector), address(ethereumFeeCollector));
     }
