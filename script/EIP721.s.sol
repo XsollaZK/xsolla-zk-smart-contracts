@@ -3,11 +3,12 @@ pragma solidity ^0.8.28;
 
 import { console } from "forge-std/console.sol";
 
+import { ERC721Factory } from "src/product/token/ERC721/ERC721Factory.sol";
+import { ERC721Modular } from "src/product/token/ERC721/extensions/ERC721Modular.sol";
+import { ERC721Claimer } from "src/product/token/ERC721/ERC721Claimer.sol";
+import { SVGIconsLib } from "src/product/libraries/SVGIconsLib.sol";
+
 import { DeployStage } from "./DeployStage.s.sol";
-import { ERC721Factory } from "../src/product/token/ERC721/ERC721Factory.sol";
-import { ERC721Modular } from "../src/product/token/ERC721/extensions/ERC721Modular.sol";
-import { ERC721Claimer } from "../src/product/token/ERC721/ERC721Claimer.sol";
-import { SVGIconsLib } from "../src/product/libraries/SVGIconsLib.sol";
 
 contract EIP721 is DeployStage {
     error ERC721ModularNotDeployed();

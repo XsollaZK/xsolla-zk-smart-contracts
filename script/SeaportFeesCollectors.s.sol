@@ -2,9 +2,11 @@
 pragma solidity ^0.8.28;
 
 import { console } from "forge-std/console.sol";
+
+import { BaseFeeCollector } from "src/product/collector/BaseFeeCollector.sol";
+import { EthereumFeeCollector } from "src/product/collector/EthereumFeeCollector.sol";
+
 import { DeployStage } from "./DeployStage.s.sol";
-import { BaseFeeCollector } from "../src/product/collector/BaseFeeCollector.sol";
-import { EthereumFeeCollector } from "../src/product/collector/EthereumFeeCollector.sol";
 
 /// @title SeaportFeesCollectors Deployment Script
 /// @notice Minimal deployment for BaseFeeCollector and EthereumFeeCollector

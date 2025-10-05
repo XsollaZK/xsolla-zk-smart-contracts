@@ -3,10 +3,11 @@ pragma solidity ^0.8.28;
 
 import { console } from "forge-std/console.sol";
 
+import { ERC20Factory } from "src/product/token/ERC20/ERC20Factory.sol";
+import { ERC20Modular } from "src/product/token/ERC20/extensions/ERC20Modular.sol";
+import { ERC20Claimer } from "src/product/token/ERC20/ERC20Claimer.sol";
+
 import { DeployStage } from "./DeployStage.s.sol";
-import { ERC20Factory } from "../src/product/token/ERC20/ERC20Factory.sol";
-import { ERC20Modular } from "../src/product/token/ERC20/extensions/ERC20Modular.sol";
-import { ERC20Claimer } from "../src/product/token/ERC20/ERC20Claimer.sol";
 
 contract EIP20 is DeployStage {
     error ERC20ModularNotDeployed();

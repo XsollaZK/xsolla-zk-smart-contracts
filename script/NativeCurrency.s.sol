@@ -2,9 +2,11 @@
 pragma solidity ^0.8.28;
 
 import { console } from "forge-std/console.sol";
+
+import { WETH9 } from "src/product/WETH9.sol";
+import { Faucet } from "src/product/Faucet.sol";
+
 import { DeployStage } from "./DeployStage.s.sol";
-import { WETH9 } from "../src/product/WETH9.sol";
-import { Faucet } from "../src/product/Faucet.sol";
 
 /// @title NativeCurrency Deployment Script
 /// @notice Minimal deployment for WETH9 and Faucet contracts

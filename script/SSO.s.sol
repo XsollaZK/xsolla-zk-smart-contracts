@@ -12,11 +12,9 @@ import { WebAuthnValidator } from "src/modules/WebAuthnValidator.sol";
 import { GuardianExecutor } from "src/modules/GuardianExecutor.sol";
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
 
-contract Deploy is Script {
-    function makeProxy(address impl) internal returns (address) {
-        return address(new TransparentUpgradeableProxy(impl, msg.sender, ""));
-    }
+import { DeployStage } from "./DeployStage.s.sol";
 
+contract Deploy is DeployStage {
     function deployFactory() internal returns (address factory, address[] memory defaultModules) {
         vm.startBroadcast();
 

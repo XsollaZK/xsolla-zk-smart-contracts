@@ -3,10 +3,11 @@ pragma solidity ^0.8.28;
 
 import { console } from "forge-std/console.sol";
 
+import { ERC1155Factory } from "src/product/token/ERC1155/ERC1155Factory.sol";
+import { ERC1155Modular } from "src/product/token/ERC1155/extensions/ERC1155Modular.sol";
+import { ERC1155Claimer } from "src/product/token/ERC1155/ERC1155Claimer.sol";
+
 import { DeployStage } from "./DeployStage.s.sol";
-import { ERC1155Factory } from "../src/product/token/ERC1155/ERC1155Factory.sol";
-import { ERC1155Modular } from "../src/product/token/ERC1155/extensions/ERC1155Modular.sol";
-import { ERC1155Claimer } from "../src/product/token/ERC1155/ERC1155Claimer.sol";
 
 contract EIP1155 is DeployStage {
     error ERC1155ModularNotDeployed();
