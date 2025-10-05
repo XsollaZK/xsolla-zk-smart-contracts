@@ -81,10 +81,13 @@ jobs:
       - name: Install dependencies
         run: forge soldeer install
 
+      - name: Build contracts
+        run: forge build
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.15.1
+          version: 10.17.1
 
       - name: Use Node.js
         uses: actions/setup-node@v5
@@ -101,8 +104,8 @@ jobs:
       - name: Run bundler
         run: pnpm bundler &
 
-      - name: Deploy contracts
+      - name: Deploy contracts and a test account
         run: pnpm deploy-test
 
-      - name: Run integration test
-        run: pnpm bundler-test
+      - name: Run integration tests
+        run: pnpm test
