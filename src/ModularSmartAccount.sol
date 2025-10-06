@@ -57,7 +57,8 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     function execute(ModeCode mode, bytes calldata executionCalldata)
         external
         payable
-        onlyEntryPointOrSelf /*withHook*/
+        onlyEntryPointOrSelf /* withHook*/
+
     {
         // slither-disable-next-line unused-return
         (CallType callType, ExecType execType,,) = mode.decode();
@@ -159,7 +160,11 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     function executeUserOp(
         PackedUserOperation calldata userOp,
         bytes32 // userOpHash
-    ) external payable onlyEntryPoint {
+    )
+        external
+        payable
+        onlyEntryPoint
+    {
         bytes calldata callData = userOp.callData[4:];
         (bool success,) = address(this).delegatecall(callData);
         if (!success) revert ExecutionFailed();
@@ -302,12 +307,7 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     }
 
     /// @dev Initializes the account.
-    function initializeAccount(address[] calldata modules, bytes[] calldata data)
-        external
-        payable
-        virtual
-        initializer
-    {
+    function initializeAccount(address[] calldata modules, bytes[] calldata data) external payable virtual initializer {
         for (uint256 i = 0; i < modules.length; i++) {
             address module = modules[i];
             if (IModule(module).isModuleType(MODULE_TYPE_VALIDATOR)) {

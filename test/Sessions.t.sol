@@ -36,8 +36,9 @@ contract SessionsTest is MSATest {
     }
 
     function test_installValidator() public {
-        bytes memory data =
-            abi.encodeCall(ModularSmartAccount.installModule, (MODULE_TYPE_VALIDATOR, address(sessionKeyValidator), ""));
+        bytes memory data = abi.encodeCall(
+            ModularSmartAccount.installModule, (MODULE_TYPE_VALIDATOR, address(sessionKeyValidator), "")
+        );
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = makeSignedUserOp(data, owner.key, address(eoaValidator));
 

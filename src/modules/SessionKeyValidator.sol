@@ -90,7 +90,7 @@ contract SessionKeyValidator is IValidator {
     /// @dev can be extended by derived contracts.
     /// @param target The target address of the call
     /// @return true if the call is banned, false otherwise
-    function isBannedCall(address target, bytes4 /* selector */ ) internal view virtual returns (bool) {
+    function isBannedCall(address target, bytes4 /* selector */) internal view virtual returns (bool) {
         return target == address(this) // this line is technically unnecessary
             || target == address(msg.sender) || IMSA(msg.sender).isModuleInstalled(MODULE_TYPE_VALIDATOR, target, "");
         // TODO: make one call to check any module type

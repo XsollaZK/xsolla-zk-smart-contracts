@@ -9,14 +9,14 @@ pragma solidity ^0.8.23;
  *           function execute(ModeCode mode, bytes calldata executionCalldata) external payable;
  * This allows for a single bytes32 to be used to encode the execution mode, calltype, execType and
  * context.
- * NOTE: Simple Account implementations only have to scope for the most significant byte. Account  that
+ * NOTE: Simple Account implementations only have to scope for the most significant byte. Account that
  * implement
  * more complex execution modes may use the entire bytes32.
  *
  * |--------------------------------------------------------------------|
- * | CALLTYPE  | EXECTYPE  |   UNUSED   | ModeSelector  |  ModePayload  |
+ * | CALLTYPE | EXECTYPE | UNUSED | ModeSelector | ModePayload |
  * |--------------------------------------------------------------------|
- * | 1 byte    | 1 byte    |   4 bytes  | 4 bytes       |   22 bytes    |
+ * | 1 byte | 1 byte | 4 bytes | 4 bytes | 22 bytes |
  * |--------------------------------------------------------------------|
  *
  * CALLTYPE: 1 byte

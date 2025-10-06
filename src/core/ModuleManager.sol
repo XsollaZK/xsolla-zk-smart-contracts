@@ -62,9 +62,9 @@ abstract contract ModuleManager {
         _;
     }
 
-    /////////////////////////////////////////////////////
-    //  Manage Validators
-    ////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // Manage Validators
+    // //////////////////////////////////////////////////
     function _installValidator(address validator, bytes calldata data) internal virtual {
         require($moduleManager().$valdiators.add(validator), AlreadyInstalled(validator));
         IValidator(validator).onInstall(data);
@@ -85,9 +85,9 @@ abstract contract ModuleManager {
         return $moduleManager().$valdiators.contains(validator);
     }
 
-    /////////////////////////////////////////////////////
-    //  Manage Executors
-    ////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // Manage Executors
+    // //////////////////////////////////////////////////
 
     function _installExecutor(address executor, bytes calldata data) internal {
         require($moduleManager().$executors.add(executor), AlreadyInstalled(executor));
@@ -107,9 +107,9 @@ abstract contract ModuleManager {
         return $moduleManager().$executors.contains(executor);
     }
 
-    /////////////////////////////////////////////////////
-    //  Manage Fallback
-    ////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // Manage Fallback
+    // //////////////////////////////////////////////////
 
     function _installFallbackHandler(address handler, bytes calldata params) internal virtual {
         bytes4 selector = bytes4(params[0:4]);

@@ -143,7 +143,11 @@ contract WebAuthnValidator is IValidator {
         address, // sender
         bytes32 signedHash,
         bytes calldata signature
-    ) external view returns (bytes4) {
+    )
+        external
+        view
+        returns (bytes4)
+    {
         return webAuthVerify(signedHash, signature) ? IERC1271.isValidSignature.selector : bytes4(0xffffffff);
     }
 
@@ -166,8 +170,12 @@ contract WebAuthnValidator is IValidator {
     /// @param fatSignature The signature to validate (authenticator data, client data, [r, s], credential ID)
     /// @return true if the signature is valid
     function webAuthVerify(bytes32 signedHash, bytes memory fatSignature) internal view returns (bool) {
-        (bytes memory authenticatorData, string memory clientDataJSON, bytes32[2] memory rs, bytes memory credentialId)
-        = abi.decode(fatSignature, (bytes, string, bytes32[2], bytes));
+        (
+            bytes memory authenticatorData,
+            string memory clientDataJSON,
+            bytes32[2] memory rs,
+            bytes memory credentialId
+        ) = abi.decode(fatSignature, (bytes, string, bytes32[2], bytes));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API/Authenticator_data#attestedcredentialdata
         require(authenticatorData[32] & AUTH_DATA_MASK == AUTH_DATA_MASK, InvalidAuthDataFlags(authenticatorData[32]));

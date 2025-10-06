@@ -11,3 +11,6 @@ dependencies
 
 # coverage
 lcov.info
+
+# Environment files
+.env

@@ -103,18 +103,15 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     /// @param userOpHash The hash of the operation.
     /// @return true if the transaction is valid.
     /// @dev Session spec and period IDs must be provided as validator data.
-    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash)
-        public
-        override
-        returns (uint256)
-    {
+    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash) public override returns (uint256) {
         // slither-disable-next-line unused-return
         (,, bytes memory validatorData) = abi.decode(userOp.signature, (address, bytes, bytes));
         // slither-disable-next-line unused-return
-        (SessionLib.SessionSpec memory spec,) = abi.decode(
-            validatorData, // this is passed by the signature builder
-            (SessionLib.SessionSpec, uint48[])
-        );
+        (SessionLib.SessionSpec memory spec,) =
+            abi.decode(
+                validatorData, // this is passed by the signature builder
+                (SessionLib.SessionSpec, uint48[])
+            );
         bytes32 sessionActionsHash = getSessionActionsHash(spec);
         require(areSessionActionsAllowed[sessionActionsHash], SessionLib.ActionsNotAllowed(sessionActionsHash));
         return SessionKeyValidator.validateUserOp(userOp, userOpHash);

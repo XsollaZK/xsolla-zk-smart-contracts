@@ -62,8 +62,9 @@ contract BasicTest is MSATest {
         executions[0] = Execution({ target: address(target), value: 0, callData: setValueOnTarget });
         executions[1] = Execution({ target: target2, value: target2Amount, callData: "" });
 
-        bytes memory callData =
-            abi.encodeCall(IERC7579Account.execute, (ModeLib.encodeSimpleBatch(), ExecutionLib.encodeBatch(executions)));
+        bytes memory callData = abi.encodeCall(
+            IERC7579Account.execute, (ModeLib.encodeSimpleBatch(), ExecutionLib.encodeBatch(executions))
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = makeSignedUserOp(callData, owner.key, address(eoaValidator));
