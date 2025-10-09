@@ -9,9 +9,12 @@ optimizer_runs = 1_000_000
 via_ir = true
 evm_version = "cancun"
 solc = "0.8.28"
+bytecode_hash = "none"
+cbor_metadata = false
 
 [rpc_endpoints]
 zkxsolla = "${ZKXSOLLA_RPC_URL}"
+anvil = "${ANVIL_RPC_URL}"
  
 [fmt]
 bracket_spacing = true

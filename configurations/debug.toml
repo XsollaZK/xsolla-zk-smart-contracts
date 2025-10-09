@@ -1,2 +1,7 @@
-[zkxsolla]
-endpoint_url = "${ZKXSOLLA_RPC_URL}"
+[anvil]
+endpoint_url = "${ANVIL_RPC_URL}"
+
+[anvil.address]
+WETH9 = "0xDAE5FaD7884057888FB7064A7856e4c01E085B18"
+Faucet = "0xECF0103FbB59ea689a671583b97F09aBe450334b"
+TransparentUpgradeableProxy_0x958d3a58cc9dee008450b51a8d8e0ac42cb38b04dfb91ec6fc2edd770c174d63 = "0x5d28e41349076dfB5CD43c62531B73f68d263927"

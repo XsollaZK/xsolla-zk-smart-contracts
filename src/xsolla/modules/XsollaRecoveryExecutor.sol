@@ -12,43 +12,42 @@ import { IERC7579Account } from "../../interfaces/IERC7579Account.sol";
 import { ModeLib } from "../../libraries/ModeLib.sol";
 
 /// @title XsollaRecoveryExecutor
-/// @notice Extends GuardianExecutor by introducing an implicit global Xsolla guardian that can recover any account
-/// without being explicitly registered per account. Guardian management (add / accept / remove) is intentionally
-/// disabled; only the implicit guardian is recognized.
-/// @dev Submitter role equates to guardian or owner authority in the original flow.
-/// Recovery supports EOA key addition and WebAuthn passkey addition through installed validators.
-///  Time window calculations can be adjusted via admin-controlled signed offsets for delay and validity.
-/// @author Oleg Bedrin - Xsolla Web3 <o.bedrin@xsolla.com>
+/// @notice GuardianExecutor variant with an implicit, globally trusted Xsolla guardian (no per‑account guardian
+/// setup).
+/// @dev Disables all mutable guardian management; only a privileged submit / finalize recovery flow is allowed.
+/// Recovery lifecycle:
+/// 1. initializeRecovery(): stores a pending request if none active (or previous expired).
+/// 2. finalizeRecovery(): callable only after REQUEST_DELAY_TIME has strictly passed
+///    and strictly before (timestamp + REQUEST_VALIDITY_TIME) expires.
+/// 3. discardRecovery()/discardRecoveryFor(): cancels an active request.
+/// A recovery is considered active if (timestamp != 0 && data.length != 0).
 contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
-    /// @notice Role allowed to initialize recovery requests.
+    /// @notice Role allowed to submit (initialize) recovery requests acting as the implicit guardian.
+    /// @dev Holders can start or discard recoveries for any account.
     bytes32 public constant SUBMITTER_ROLE = keccak256("SUBMITTER_ROLE");
-    /// @notice Role allowed to finalize recovery if additional segregation is ever applied (currently unused in logic).
+    /// @notice Role allowed to finalize (execute) a pending recovery after the delay window.
+    /// @dev Separation of duties: submitter cannot finalize unless also granted this role.
     bytes32 public constant FINALIZER_ROLE = keccak256("FINALIZER_ROLE");
 
-    /// @notice Signed offset (positive or negative) applied to the base REQUEST_DELAY_TIME during validation.
-    int256 public requestDelayTimeOffset;
-    /// @notice Signed offset (positive or negative) applied to the base REQUEST_VALIDITY_TIME during validation.
-    int256 public requestValidityTimeOffset;
-
-    /// @notice Emitted the first time the Xsolla guardian (implicit) initiates a recovery for an account.
-    /// @param account The account undergoing recovery.
-    /// @param guardian The implicit guardian (xsolla) that initiated the recovery.
-    event XsollaGuardianRecovery(address indexed account, address indexed guardian);
-
-    /// @notice Error thrown when attempting to modify guardians which is disabled in this implementation.
+    /// @notice Thrown when attempting to use disabled guardian management functions.
+    /// @custom:error GuardianModificationDisabled All guardian mutation entrypoints revert with this error.
     error GuardianModificationDisabled();
 
-    /// @notice Deploys the executor with required validator references and role assignments.
-    /// @param _webAuthValidator The address of the WebAuthn (passkey) validator contract.
-    /// @param _eoaValidator The address of the EOA key validator contract.
-    /// @param _finalizer Address granted FINALIZER_ROLE privileges.
-    /// @param _admin Address granted DEFAULT_ADMIN_ROLE privileges.
-    /// @param _submitter Address granted SUBMITTER_ROLE privileges.
+    /// @notice Thrown when trying to discard a recovery that does not exist for the target account.
+    /// @param account The account for which no active recovery exists.
+    error CannotDiscardRecoveryFor(address account);
+
+    /// @notice Deploys the executor and assigns role addresses.
+    /// @param _webAuthValidator Address of the installed WebAuthn (passkey) validator.
+    /// @param _eoaValidator Address of the installed EOA key validator.
+    /// @param _admin Address granted DEFAULT_ADMIN_ROLE (can grant/revoke other roles).
+    /// @param _finalizer Address granted FINALIZER_ROLE (may finalize recoveries).
+    /// @param _submitter Address granted SUBMITTER_ROLE (may initialize/discard recoveries).
     constructor(
         address _webAuthValidator,
         address _eoaValidator,
-        address _finalizer,
         address _admin,
+        address _finalizer,
         address _submitter
     ) GuardianExecutor(_webAuthValidator, _eoaValidator) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -56,12 +55,16 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         _grantRole(SUBMITTER_ROLE, _submitter);
     }
 
-    /// @notice Initializes a recovery request on behalf of the implicit Xsolla guardian.
-    /// @dev Bypasses onlyGuardianOf from the base when invoked through the privileged submitter path.
-    /// Validates no active recovery exists or that the previous one expired.
-    /// @param accountToRecover The smart account subject to recovery.
-    /// @param recoveryType The recovery type (EOA or Passkey).
-    /// @param data ABI-encoded payload required by the target validator.
+    /// @notice Initializes a recovery request for a smart account (implicit global guardian).
+    /// @dev Requirements:
+    /// - Corresponding validator for recoveryType must be installed (checkInstalledValidator).
+    /// - No active (non‑expired) recovery in progress (else RecoveryInProgress).
+    /// Behavior:
+    /// - If a previous recovery exists but has expired, it is discarded first.
+    /// - Records timestamp = current block time.
+    /// @param accountToRecover Smart account to recover.
+    /// @param recoveryType Recovery type enum (EOA or Passkey).
+    /// @param data ABI‑encoded validator payload (e.g. new key material).
     function initializeRecovery(address accountToRecover, RecoveryType recoveryType, bytes calldata data)
         external
         virtual
@@ -71,19 +74,27 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         // Implicit guardian path: replicate the base logic without the onlyGuardianOf modifier.
         checkInstalledValidator(accountToRecover, recoveryType);
         uint256 pendingRecoveryTimestamp = pendingRecovery[accountToRecover].timestamp;
-        if (!(pendingRecoveryTimestamp == 0 || pendingRecoveryTimestamp + REQUEST_VALIDITY_TIME < block.timestamp)) {
+        if (pendingRecoveryTimestamp != 0 && pendingRecoveryTimestamp + REQUEST_VALIDITY_TIME >= block.timestamp) {
             revert RecoveryInProgress(accountToRecover);
+        } else {
+            _discardRecoveryFor(accountToRecover, false);
         }
         RecoveryRequest memory recovery = RecoveryRequest(recoveryType, data, uint48(block.timestamp));
         pendingRecovery[accountToRecover] = recovery;
         emit RecoveryInitiated(accountToRecover, msg.sender, recovery);
-        emit XsollaGuardianRecovery(accountToRecover, msg.sender);
     }
 
-    /// @notice Finalizes an in-progress recovery after the delay window and before the expiry window.
-    /// @dev Executes a call into the respective validator to append a new key or validation record.
-    /// @param account The account whose recovery is being finalized.
-    /// @return returnData The raw return data from the underlying validator execution.
+    /// @notice Finalizes an initialized recovery after delay and before expiry, executing the validator action.
+    /// @dev Requirements:
+    /// - Active recovery must exist (else NoRecoveryInProgress).
+    /// - Validator for stored recovery type still installed.
+    /// - Timing: (timestamp + REQUEST_DELAY_TIME) < block.timestamp (strictly after delay) AND
+    ///            block.timestamp < (timestamp + REQUEST_VALIDITY_TIME) (strictly before expiry).
+    /// Side effects:
+    /// - Deletes pending recovery before external call.
+    /// - Executes validator-specific addOwner / addValidationKey via account.
+    /// @param account Account whose recovery is being finalized.
+    /// @return returnData ABI return data from underlying validator call.
     function finalizeRecovery(address account)
         external
         virtual
@@ -98,11 +109,8 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
             revert NoRecoveryInProgress(account);
         }
 
-        if (!(recovery.timestamp + SafeCast.toUint256(SafeCast.toInt256(REQUEST_DELAY_TIME) + requestDelayTimeOffset)
-                        < block.timestamp
-                    && recovery.timestamp
-                            + SafeCast.toUint256(SafeCast.toInt256(REQUEST_VALIDITY_TIME) + requestValidityTimeOffset)
-                        > block.timestamp)) {
+        if (!(recovery.timestamp + REQUEST_DELAY_TIME < block.timestamp
+                    && recovery.timestamp + REQUEST_VALIDITY_TIME > block.timestamp)) {
             revert RecoveryTimestampInvalid(recovery.timestamp);
         }
 
@@ -120,12 +128,25 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         emit RecoveryFinished(account);
     }
 
+    /// @notice Discards caller's own pending recovery request, if any.
+    /// @dev Reverts with CannotDiscardRecoveryFor if none is active.
+    function discardRecovery() public virtual override {
+        _discardRecoveryFor(msg.sender, true);
+    }
+
+    /// @notice Discards a pending recovery for a target account (submitter authority).
+    /// @dev Reverts with CannotDiscardRecoveryFor if no active recovery for account.
+    /// @param account Target account whose recovery is to be discarded.
+    function discardRecoveryFor(address account) public virtual onlyRole(SUBMITTER_ROLE) {
+        _discardRecoveryFor(account, true);
+    }
+
     // ---------------------------------------------------------------------
     // Disabled guardian management (only implicit xsolla guardian is allowed).
     // ---------------------------------------------------------------------
 
-    /// @notice Disabled in this implementation because guardian modification is not supported.
-    /// @param /*newGuardian*/ Ignored parameter.
+    /// @inheritdoc GuardianExecutor
+    /// @notice Disabled in this implementation; always reverts.
     function proposeGuardian(
         address /* newGuardian*/
     )
@@ -137,9 +158,8 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         revert GuardianModificationDisabled();
     }
 
-    /// @notice Disabled in this implementation because guardian modification is not supported.
-    /// @param /*accountToGuard*/ Ignored parameter.
-    /// @return Always reverts; return included for interface compatibility.
+    /// @inheritdoc GuardianExecutor
+    /// @notice Disabled in this implementation; always reverts.
     function acceptGuardian(
         address /* accountToGuard*/
     )
@@ -152,8 +172,8 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         revert GuardianModificationDisabled();
     }
 
-    /// @notice Disabled in this implementation because guardian modification is not supported.
-    /// @param /*guardianToRemove*/ Ignored parameter.
+    /// @inheritdoc GuardianExecutor
+    /// @notice Disabled in this implementation; always reverts.
     function removeGuardian(
         address /* guardianToRemove*/
     )
@@ -165,17 +185,16 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         revert GuardianModificationDisabled();
     }
 
-    /// @notice Sets a signed offset applied to REQUEST_DELAY_TIME during recovery validation.
-    /// @dev Only callable by admin.
-    /// @param offset The signed offset in seconds (positive or negative).
-    function setRequestDelayTimeOffset(int256 offset) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        requestDelayTimeOffset = offset;
-    }
-
-    /// @notice Sets a signed offset applied to REQUEST_VALIDITY_TIME during recovery validation.
-    /// @dev Only callable by admin.
-    /// @param offset The signed offset in seconds (positive or negative).
-    function setRequestValidityTimeOffset(int256 offset) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        requestValidityTimeOffset = offset;
+    /// @dev Internal helper to discard an existing recovery.
+    /// Reverts when no active recovery exists (CannotDiscardRecoveryFor).
+    /// @param account Target account whose recovery (if active) is removed.
+    function _discardRecoveryFor(address account, bool throws) internal {
+        RecoveryRequest memory recovery = pendingRecovery[account];
+        if (recovery.timestamp != 0 && recovery.data.length != 0) {
+            delete pendingRecovery[account];
+            emit RecoveryDiscarded(account);
+        } else if (throws) {
+            revert CannotDiscardRecoveryFor(account);
+        }
     }
 }

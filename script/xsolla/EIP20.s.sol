@@ -128,7 +128,7 @@ contract EIP20 is DeployStage {
         erc20Claimer.setAmountToClaim(claimAmount);
         modularERC20.grantRole(modularERC20.MINTER_ROLE(), address(erc20Claimer));
         vm.stopBroadcast();
-        
+
         return (erc20Factory, modularERC20, erc20Claimer);
     }
 

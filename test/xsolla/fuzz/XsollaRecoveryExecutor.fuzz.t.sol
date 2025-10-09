@@ -20,13 +20,13 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
 
     function setUp() public override {
         super.setUp();
-        // Deploy executor (this contract: admin, submitter, finalizer)
+        // Deploy executor (constructor arg order: webAuth, eoa, admin, finalizer, submitter)
         executor = new XsollaRecoveryExecutor(
-            address(0), // webAuthValidator (unused in these fuzzes)
-            address(eoaValidator), // eoa validator
-            address(this), // finalizer
+            address(0),
+            address(eoaValidator),
             address(this), // admin
-            address(this) // submitter == implicit guardian (not explicitly used – roles drive access)
+            address(this), // finalizer
+            address(this) // submitter
         );
 
         // Install executor module on the smart account (mirrors Guardian.t.sol style)
@@ -37,108 +37,89 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
         entryPoint.handleOps(userOps, bundler);
     }
 
-    // Fuzz successful recovery path with signed time offsets
+    // Fuzz successful recovery path with synthesized local time adjustments (no on-chain offsets)
     function testFuzz_RecoverySuccess(int128 delayOffset, int128 validityOffset, uint64 warpExtra) public {
         uint256 baseDelay = executor.REQUEST_DELAY_TIME();
         uint256 baseValidity = executor.REQUEST_VALIDITY_TIME();
+        vm.assume(baseValidity > baseDelay + 2);
 
-        // Bound offsets so (base + offset) stays >= 0 and within sane test window
-        vm.assume(delayOffset >= -int128(int256(baseDelay)) && delayOffset <= int128(7 days));
-        vm.assume(validityOffset >= -int128(int256(baseValidity)) && validityOffset <= int128(14 days));
+        // Derive a non-negative extra delay (cap 7 days) using safe abs (cast to int256 first to avoid overflow)
+        int256 d = int256(delayOffset);
+        uint256 delayExtra = uint256(d < 0 ? -d : d) % 7 days;
+        uint256 effDelay = baseDelay + delayExtra;
 
-        int256 effDelaySigned = int256(uint256(baseDelay)) + delayOffset;
-        int256 effValiditySigned = int256(uint256(baseValidity)) + validityOffset;
-        vm.assume(effDelaySigned >= 0 && effValiditySigned >= 0);
+        // Ensure effDelay leaves room inside validity window; clamp if needed
+        if (effDelay + 2 >= baseValidity) {
+            // If window too tight after adding extra, reduce to last valid start ensuring effDelay >= baseDelay
+            if (baseValidity > baseDelay + 2) {
+                effDelay = baseValidity - 3;
+                if (effDelay < baseDelay) effDelay = baseDelay;
+            } else {
+                // No usable window – skip
+                return;
+            }
+        }
 
-        uint256 effDelay = uint256(effDelaySigned);
-        uint256 effValidity = uint256(effValiditySigned);
-
-        // Need enough room for finalize (validity > delay + 2)
-        vm.assume(effValidity > effDelay + 2);
-
-        // Bound extra warp so we stay inside validity window
-        if (effValidity - effDelay > 3) {
-            vm.assume(warpExtra <= uint64(effValidity - effDelay - 2));
+        // Derive warpExtra limited to stay strictly before validity end
+        uint256 maxWarpExtra = baseValidity - effDelay - 2; // need at least +1 to pass delay and < validity
+        if (maxWarpExtra > 0) {
+            warpExtra = uint64(warpExtra % (maxWarpExtra + 1));
         } else {
             warpExtra = 0;
         }
 
-        // Apply offsets
-        executor.setRequestDelayTimeOffset(delayOffset);
-        executor.setRequestValidityTimeOffset(validityOffset);
+        // validityOffset unused now; keep param noise for fuzzing distribution
+        validityOffset; // silence warning
 
-        // New owner target
         newOwner = makeAccount("newOwnerFuzz");
-
-        // Initialize recovery (EOA path)
         executor.initializeRecovery(address(account), GuardianExecutor.RecoveryType.EOA, abi.encode(newOwner.addr));
 
-        // Early finalize must revert
+        // Early finalize should revert
         vm.expectPartialRevert(GuardianExecutor_RecoverTimestampInvalid_selector());
         executor.finalizeRecovery(address(account));
 
-        // Warp into valid window
+        // Warp into valid window: timestamp + effDelay + 1 (+ optional warpExtra)
         vm.warp(block.timestamp + effDelay + 1 + warpExtra);
 
-        // Finalize (should succeed)
         executor.finalizeRecovery(address(account));
 
         // Assert new owner appended
         address[] memory owners = eoaValidator.getOwners(address(account));
         bool found;
         for (uint256 i = 0; i < owners.length; i++) {
-            if (owners[i] == newOwner.addr) {
-                found = true;
-                break;
-            }
+            if (owners[i] == newOwner.addr) found = true;
+            break;
         }
         assertTrue(found, "New owner not added");
-
-        // Pending cleared
         (uint8 rType, bytes memory dataBytes, uint256 ts) = _pending();
         assertEq(rType, uint8(GuardianExecutor.RecoveryType.None), "Recovery not cleared");
         assertEq(dataBytes.length, 0, "Data not cleared");
         assertEq(ts, 0, "Timestamp not cleared");
     }
 
-    // Fuzz early finalize revert (delay not yet passed)
+    // Fuzz early finalize revert (always finalize immediately)
     function testFuzz_RevertEarly(int128 delayOffset) public {
-        uint256 baseDelay = executor.REQUEST_DELAY_TIME();
-        vm.assume(delayOffset >= -int128(int256(baseDelay)) && delayOffset <= int128(5 days));
-        executor.setRequestDelayTimeOffset(delayOffset);
-
+        delayOffset; // param retained for fuzz diversity
         newOwner = makeAccount("earlyOwner");
         executor.initializeRecovery(address(account), GuardianExecutor.RecoveryType.EOA, abi.encode(newOwner.addr));
-
         vm.expectPartialRevert(GuardianExecutor_RecoverTimestampInvalid_selector());
         executor.finalizeRecovery(address(account));
     }
 
-    // Fuzz late finalize revert (past validity window)
+    // Fuzz late finalize revert (warp past validity window)
     function testFuzz_RevertLate(int128 delayOffset, int128 validityOffset, uint64 extraWarp) public {
+        delayOffset; // unused now
+        validityOffset;
         uint256 baseDelay = executor.REQUEST_DELAY_TIME();
         uint256 baseValidity = executor.REQUEST_VALIDITY_TIME();
-
-        vm.assume(delayOffset >= -int128(int256(baseDelay)) && delayOffset <= int128(7 days));
-        vm.assume(validityOffset >= -int128(int256(baseValidity)) && validityOffset <= int128(14 days));
-
-        int256 effDelaySigned = int256(uint256(baseDelay)) + delayOffset;
-        int256 effValiditySigned = int256(uint256(baseValidity)) + validityOffset;
-        vm.assume(effDelaySigned >= 0 && effValiditySigned >= 0);
-
-        uint256 effDelay = uint256(effDelaySigned);
-        uint256 effValidity = uint256(effValiditySigned);
-        vm.assume(effValidity > effDelay + 2);
-
-        executor.setRequestDelayTimeOffset(delayOffset);
-        executor.setRequestValidityTimeOffset(validityOffset);
+        vm.assume(baseValidity > baseDelay + 2);
 
         newOwner = makeAccount("lateOwner");
         executor.initializeRecovery(address(account), GuardianExecutor.RecoveryType.EOA, abi.encode(newOwner.addr));
 
-        // Warp past expiry: delay + validity + extra
-        vm.assume(extraWarp < 7 days);
-        vm.warp(block.timestamp + effDelay + effValidity + extraWarp);
+        // Warp beyond validity (timestamp + baseValidity + extra)
+        extraWarp = uint64(extraWarp % 7 days);
+        vm.warp(block.timestamp + baseDelay + baseValidity + extraWarp);
 
         vm.expectPartialRevert(GuardianExecutor_RecoverTimestampInvalid_selector());
         executor.finalizeRecovery(address(account));

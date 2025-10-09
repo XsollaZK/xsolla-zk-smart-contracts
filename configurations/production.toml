@@ -1,2 +1,5 @@
 [zkxsolla]
 endpoint_url = "${ZKXSOLLA_RPC_URL}"
+
+[anvil]
+endpoint_url = "${ANVIL_RPC_URL}"

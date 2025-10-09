@@ -204,7 +204,7 @@ contract GuardianExecutor is IExecutor {
         }
     }
 
-    function discardRecovery() public {
+    function discardRecovery() public virtual {
         RecoveryRequest memory recovery = pendingRecovery[msg.sender];
         delete pendingRecovery[msg.sender];
         if (recovery.timestamp != 0 && recovery.data.length != 0) {

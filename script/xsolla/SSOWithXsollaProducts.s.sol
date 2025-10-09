@@ -14,11 +14,26 @@ import { XsollaRecoveryExecutor } from "src/xsolla/modules/XsollaRecoveryExecuto
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
 
 import { DeployStage } from "./base/DeployStage.s.sol";
+import { Artifacts } from "./base/Artifacts.s.sol";
 import { SSO } from "./SSO.s.sol";
 
 contract SSOWithXsollaProducts is DeployStage {
-    function deployFactory() internal returns (address factory, address[] memory extendedModules) {
-        vm.startBroadcast();
+    using Artifacts for Artifacts.Artifact;
+
+    // Simple example of unique ID usage
+    bytes32 private constant ID_OF_TUP_XSOLLA_RECOVERY_EXECUTOR = keccak256("TransparentUpgradeableProxy:xsolla-recovery-executor");
+
+    function deployFactory() 
+        public 
+        withConfiguration(Kind.DEBUG)
+        defineUniqueInjection(
+            Artifacts.Artifact.TransparentUpgradeableProxy, ID_OF_TUP_XSOLLA_RECOVERY_EXECUTOR
+        )
+        returns (
+            address factory, 
+            address[] memory extendedModules
+        )
+    {
         SSO ssoStage = new SSO();
         address[] memory defaultModules = new address[](4);
         extendedModules = new address[](5);
@@ -26,10 +41,12 @@ contract SSOWithXsollaProducts is DeployStage {
         for (uint256 i = 0; i < defaultModules.length; i++) {
             extendedModules[i] = defaultModules[i];
         }
-        extendedModules[4] = _makeTUP(
+        vm.startBroadcast();
+        extendedModules[4] = _makeTUPWithId(
             address(
                 new XsollaRecoveryExecutor(defaultModules[2], defaultModules[0], msg.sender, msg.sender, msg.sender)
-            )
+            ),
+            ID_OF_TUP_XSOLLA_RECOVERY_EXECUTOR
         );
 
         vm.stopBroadcast();

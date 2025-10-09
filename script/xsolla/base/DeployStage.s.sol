@@ -7,32 +7,21 @@ import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/trans
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 import { Script } from "forge-std/Script.sol";
-import { Config } from "forge-std/Config.sol";
 import { console } from "forge-std/console.sol";
 
 import { MSAFactory } from "src/MSAFactory.sol";
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
 
-// 1) Historical proxies - automatic
-// 2) Cross-chain and cross-stage configs
+import { Configuration } from "./Configuration.s.sol";
+import { Artifacts } from "./Artifacts.s.sol";
 
-abstract contract DeployStage is Script, Config {
-    enum Configuration {
-        PRODUCTION,
-        DEBUG
+abstract contract DeployStage is Script, Configuration {
+    using Artifacts for Artifacts.Artifact;
+
+    function _makeTUPWithId(address impl, bytes32 uniqueId) internal virtual returns (address) {
+        return address(new TransparentUpgradeableProxy{salt: Artifacts.Artifact.TransparentUpgradeableProxy.toSalt(uniqueId)}(impl, msg.sender, ""));
     }
-
-    string public constant DEFAULT_CONFIG_FOLDER = "./configurations/";
-
-    modifier withConfiguration(Configuration config) {
-        if (config == Configuration.PRODUCTION) {
-            _loadConfig(string(abi.encodePacked(DEFAULT_CONFIG_FOLDER, "production.toml")), true);
-        } else {
-            _loadConfig(string(abi.encodePacked(DEFAULT_CONFIG_FOLDER, "debug.toml")), true);
-        }
-        _;
-    }
-
+    
     function _makeTUP(address impl) internal virtual returns (address) {
         return address(new TransparentUpgradeableProxy(impl, msg.sender, ""));
     }
