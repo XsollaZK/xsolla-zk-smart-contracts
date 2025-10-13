@@ -83,14 +83,7 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
 
         executor.finalizeRecovery(address(account));
 
-        // Assert new owner appended
-        address[] memory owners = eoaValidator.getOwners(address(account));
-        bool found;
-        for (uint256 i = 0; i < owners.length; i++) {
-            if (owners[i] == newOwner.addr) found = true;
-            break;
-        }
-        assertTrue(found, "New owner not added");
+        assertTrue(eoaValidator.isOwnerOf(address(account), newOwner.addr), "New owner not added");
         (uint8 rType, bytes memory dataBytes, uint256 ts) = _pending();
         assertEq(rType, uint8(GuardianExecutor.RecoveryType.None), "Recovery not cleared");
         assertEq(dataBytes.length, 0, "Data not cleared");

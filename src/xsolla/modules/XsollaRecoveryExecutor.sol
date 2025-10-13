@@ -3,13 +3,14 @@ pragma solidity ^0.8.24;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { LibERC7579 } from "solady/accounts/LibERC7579.sol";
 
 import { WebAuthnValidator } from "../../modules/WebAuthnValidator.sol";
 import { EOAKeyValidator } from "../../modules/EOAKeyValidator.sol";
 import { GuardianExecutor } from "../../modules/GuardianExecutor.sol";
 import { ExecutionLib } from "../../libraries/ExecutionLib.sol";
 import { IERC7579Account } from "../../interfaces/IERC7579Account.sol";
-import { ModeLib } from "../../libraries/ModeLib.sol";
+import { ModeLib, ModeCode } from "../../libraries/ModeLib.sol";
 
 /// @title XsollaRecoveryExecutor
 /// @notice GuardianExecutor variant with an implicit, globally trusted Xsolla guardian (no per‑account guardian
@@ -121,10 +122,11 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         bytes4 selector = recovery.recoveryType == RecoveryType.EOA
             ? EOAKeyValidator.addOwner.selector
             : WebAuthnValidator.addValidationKey.selector;
-        bytes memory execution = ExecutionLib.encodeSingle(validator, 0, abi.encodePacked(selector, recovery.data));
+        bytes memory execution = abi.encodePacked(validator, uint256(0), abi.encodePacked(selector, recovery.data));
 
         delete pendingRecovery[account];
-        returnData = IERC7579Account(account).executeFromExecutor(ModeLib.encodeSimpleSingle(), execution)[0];
+        bytes32 mode = LibERC7579.encodeMode(LibERC7579.CALLTYPE_SINGLE, LibERC7579.EXECTYPE_DEFAULT, 0, 0);
+        returnData = IERC7579Account(account).executeFromExecutor(mode, execution)[0];
         emit RecoveryFinished(account);
     }
 
@@ -137,9 +139,12 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
     /// @notice Discards a pending recovery for a target account (submitter authority).
     /// @dev Reverts with CannotDiscardRecoveryFor if no active recovery for account.
     /// @param account Target account whose recovery is to be discarded.
-    function discardRecoveryFor(address account) public virtual onlyRole(SUBMITTER_ROLE) {
+    function discardRecoveryFor(address account) external virtual onlyRole(SUBMITTER_ROLE) {
         _discardRecoveryFor(account, true);
     }
+
+    /// @notice Prevents removal of all past guardians when this module is disabled in an account, since they are not utilized.
+    function onUninstall(bytes calldata) external override virtual {}
 
     // ---------------------------------------------------------------------
     // Disabled guardian management (only implicit xsolla guardian is allowed).
