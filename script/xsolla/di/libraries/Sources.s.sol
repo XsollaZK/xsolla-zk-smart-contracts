@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
+import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import { console } from "forge-std/console.sol";
 
 // Artifact imports (grouped by domain with corrected paths)
 // Accounts / Factory
@@ -56,6 +54,10 @@ import { WETH9 } from "src/xsolla/WETH9.sol";
 
 /// @dev This library is going to be generated in the future versions of DI
 library Sources {
+    using ShortStrings for ShortString;
+
+    bytes32 public constant NICKNAMED_PROXY_FLAG = keccak256("NICKNAMED_PROXY_FLAG");
+
     enum Source {
         NONE,
         AccountBase,
@@ -91,6 +93,100 @@ library Sources {
     }
 
     error UnknownMetaArtifact();
+
+    function getFullNicknamedName(Source metaArtifact, ShortString nickname) internal pure returns (string memory) {
+        return string.concat(toString(metaArtifact), "_", nickname.toString());
+    }
+
+    function toSalt(Source metaArtifact) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(toString(metaArtifact)));
+    }
+
+    function toSalt(Source metaArtifact, ShortString nickname) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(toString(metaArtifact), nickname.toString()));
+    }
+
+    function toCreationCode(Source metaArtifact) internal pure returns (bytes memory) {
+        if (metaArtifact == Source.AccountBase) {
+            return type(AccountBase).creationCode;
+        }
+        if (metaArtifact == Source.AllowedSessionsValidator) {
+            return type(AllowedSessionsValidator).creationCode;
+        }
+        if (metaArtifact == Source.BaseFeeCollector) {
+            return type(BaseFeeCollector).creationCode;
+        }
+        if (metaArtifact == Source.ERC1155Claimer) {
+            return type(ERC1155Claimer).creationCode;
+        }
+        if (metaArtifact == Source.ERC1155Factory) {
+            return type(ERC1155Factory).creationCode;
+        }
+        if (metaArtifact == Source.ERC1155Modular) {
+            return type(ERC1155Modular).creationCode;
+        }
+        if (metaArtifact == Source.ERC1155RoyaltyManaged) {
+            return type(ERC1155RoyaltyManaged).creationCode;
+        }
+        if (metaArtifact == Source.ERC20Claimer) {
+            return type(ERC20Claimer).creationCode;
+        }
+        if (metaArtifact == Source.ERC20Factory) {
+            return type(ERC20Factory).creationCode;
+        }
+        if (metaArtifact == Source.ERC20Modular) {
+            return type(ERC20Modular).creationCode;
+        }
+        if (metaArtifact == Source.ERC721Claimer) {
+            return type(ERC721Claimer).creationCode;
+        }
+        if (metaArtifact == Source.ERC721Factory) {
+            return type(ERC721Factory).creationCode;
+        }
+        if (metaArtifact == Source.ERC721Modular) {
+            return type(ERC721Modular).creationCode;
+        }
+        if (metaArtifact == Source.ERC721RoyaltyManaged) {
+            return type(ERC721RoyaltyManaged).creationCode;
+        }
+        if (metaArtifact == Source.EOAKeyValidator) {
+            return type(EOAKeyValidator).creationCode;
+        }
+        if (metaArtifact == Source.EthereumFeeCollector) {
+            return type(EthereumFeeCollector).creationCode;
+        }
+        if (metaArtifact == Source.ExecutionHelper) {
+            return type(ExecutionHelper).creationCode;
+        }
+        if (metaArtifact == Source.ExecutionLib) {
+            return type(ExecutionLib).creationCode;
+        }
+        if (metaArtifact == Source.Faucet) return type(Faucet).creationCode;
+        if (metaArtifact == Source.GuardianExecutor) {
+            return type(GuardianExecutor).creationCode;
+        }
+        if (metaArtifact == Source.ModeLib) return type(ModeLib).creationCode;
+        if (metaArtifact == Source.MSAFactory) return type(MSAFactory).creationCode;
+        if (metaArtifact == Source.ModularSmartAccount) {
+            return type(ModularSmartAccount).creationCode;
+        }
+        if (metaArtifact == Source.SessionKeyValidator) {
+            return type(SessionKeyValidator).creationCode;
+        }
+        if (metaArtifact == Source.SessionLib) return type(SessionLib).creationCode;
+        if (metaArtifact == Source.SVGIconsLib) return type(SVGIconsLib).creationCode;
+        if (metaArtifact == Source.WebAuthnValidator) {
+            return type(WebAuthnValidator).creationCode;
+        }
+        if (metaArtifact == Source.WETH9) return type(WETH9).creationCode;
+        if (metaArtifact == Source.XsollaRecoveryExecutor) {
+            return type(XsollaRecoveryExecutor).creationCode;
+        }
+        if (metaArtifact == Source.TransparentUpgradeableProxy) {
+            return type(TransparentUpgradeableProxy).creationCode;
+        }
+        revert UnknownMetaArtifact();
+    }
 
     function toString(Source metaArtifact) internal pure returns (string memory) {
         if (metaArtifact == Source.AccountBase) {

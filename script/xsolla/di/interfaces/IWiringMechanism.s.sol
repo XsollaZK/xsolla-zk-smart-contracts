@@ -7,11 +7,11 @@ import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 
 interface IWiringMechanism {
     enum SupportedWiring {
+        NONE,
         PLAIN_NICKNAMED,
         PLAIN,
         CONFIGURATION_BASED   
     }
     function wire(bytes memory wiringInfo, SupportedWiring wiringType) external returns (address);
     function getWiredVariants(bytes memory wiringInfo, SupportedWiring wiringType) external view returns (address[] memory);
-
 }
