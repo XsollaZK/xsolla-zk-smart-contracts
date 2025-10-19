@@ -10,8 +10,11 @@ interface IWiringMechanism {
         NONE,
         PLAIN_NICKNAMED,
         PLAIN,
-        CONFIGURATION_BASED   
+        CONFIGURATION_BASED
     }
     function wire(bytes memory wiringInfo, SupportedWiring wiringType) external returns (address);
-    function getWiredVariants(bytes memory wiringInfo, SupportedWiring wiringType) external view returns (address[] memory);
+    function getWiredVariants(bytes memory wiringInfo, SupportedWiring wiringType)
+        external
+        view
+        returns (address[] memory);
 }

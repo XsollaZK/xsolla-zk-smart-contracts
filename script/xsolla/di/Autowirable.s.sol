@@ -22,8 +22,12 @@ abstract contract Autowirable is Script {
     error SourceHasNotBeenAutowired(Sources.Source source);
 
     modifier configuration(IConfiguration configContract) {
-        wiringMechanism.wire(abi.encodePacked(address(configContract)), IWiringMechanism.SupportedWiring.CONFIGURATION_BASED);
-        console.log("Configuration (", configContract.name(), ") utilized:", Strings.toHexString(address(configContract)));
+        wiringMechanism.wire(
+            abi.encodePacked(address(configContract)), IWiringMechanism.SupportedWiring.CONFIGURATION_BASED
+        );
+        console.log(
+            "Configuration (", configContract.name(), ") utilized:", Strings.toHexString(address(configContract))
+        );
         _;
     }
 
@@ -36,14 +40,14 @@ abstract contract Autowirable is Script {
     }
 
     modifier proxywire(Sources.Source source) {
-        address injectedAddress = wiringMechanism.wire(abi.encodePacked(Sources.NICKNAMED_PROXY_FLAG, msg.sender, source), IWiringMechanism.SupportedWiring.CONFIGURATION_BASED);
+        address injectedAddress = wiringMechanism.wire(
+            abi.encodePacked(Sources.NICKNAMED_PROXY_FLAG, msg.sender, source),
+            IWiringMechanism.SupportedWiring.CONFIGURATION_BASED
+        );
         console.log(
             string(
                 abi.encodePacked(
-                    "Autowired (as proxy) ",
-                    source.toString(),
-                    " to ",
-                    Strings.toHexString(injectedAddress)
+                    "Autowired (as proxy) ", source.toString(), " to ", Strings.toHexString(injectedAddress)
                 )
             )
         );
@@ -51,7 +55,8 @@ abstract contract Autowirable is Script {
     }
 
     modifier nickwire(Sources.Source source, ShortString nickname) {
-        address injectedAddress = wiringMechanism.wire(abi.encodePacked(source, nickname), IWiringMechanism.SupportedWiring.PLAIN_NICKNAMED);
+        address injectedAddress =
+            wiringMechanism.wire(abi.encodePacked(source, nickname), IWiringMechanism.SupportedWiring.PLAIN_NICKNAMED);
         console.log(
             string(
                 abi.encodePacked(
@@ -72,7 +77,8 @@ abstract contract Autowirable is Script {
     }
 
     function autowired(Sources.Source source) public view virtual returns (address) {
-        address[] memory sortedInjectedAddresses = wiringMechanism.getWiredVariants(abi.encodePacked(source), IWiringMechanism.SupportedWiring.PLAIN);
+        address[] memory sortedInjectedAddresses =
+            wiringMechanism.getWiredVariants(abi.encodePacked(source), IWiringMechanism.SupportedWiring.PLAIN);
         if (sortedInjectedAddresses.length == 0 || sortedInjectedAddresses[0] == address(0)) {
             revert SourceHasNotBeenAutowired(source);
         }
@@ -80,7 +86,9 @@ abstract contract Autowirable is Script {
     }
 
     function autowired(Sources.Source source, ShortString nickname) public view virtual returns (address) {
-        address[] memory sortedInjectedAddresses = wiringMechanism.getWiredVariants(abi.encodePacked(source, nickname), IWiringMechanism.SupportedWiring.PLAIN_NICKNAMED);
+        address[] memory sortedInjectedAddresses = wiringMechanism.getWiredVariants(
+            abi.encodePacked(source, nickname), IWiringMechanism.SupportedWiring.PLAIN_NICKNAMED
+        );
         if (sortedInjectedAddresses.length == 0 || sortedInjectedAddresses[0] == address(0)) {
             revert SourceHasNotBeenAutowired(source);
         }

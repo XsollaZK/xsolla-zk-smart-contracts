@@ -52,9 +52,8 @@ contract WebAuthnValidator is IValidator {
     event PasskeyRemoved(address indexed keyOwner, string originDomain, bytes credentialId);
 
     /// @dev Mapping of public keys to the account address that owns them
-    mapping(
-        string originDomain => mapping(bytes credentialId => mapping(address account => bytes32[2] publicKey))
-    ) private publicKeys;
+    mapping(string originDomain => mapping(bytes credentialId => mapping(address account => bytes32[2] publicKey)))
+        private publicKeys;
 
     /// @dev Mapping of domain-bound credential IDs to the account address that
     /// owns them

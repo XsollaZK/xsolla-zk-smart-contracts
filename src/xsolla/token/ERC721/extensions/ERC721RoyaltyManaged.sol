@@ -11,7 +11,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IEIP721Mintable } from "../../../interfaces/stable/IEIP721Mintable.sol";
 
 /// @title ERC721 NFT Collection with Royalty Management
-/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com> 
+/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
 /// @notice A comprehensive ERC721 implementation with
 /// royalty management, access control, and flexible minting
 /// @dev This contract combines multiple OpenZeppelin extensions:

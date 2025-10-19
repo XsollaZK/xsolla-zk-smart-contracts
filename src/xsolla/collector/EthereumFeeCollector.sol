@@ -8,7 +8,7 @@ import { EthereumFeeCollectorInterface } from "../interfaces/drafts/EthereumFeeC
 import { IWETH } from "../interfaces/stable/IWETH.sol";
 
 /// @title EthereumFeeCollector
-/// @author OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3 
+/// @author OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
 /// @notice EthereumFeeCollector is a contract that is used as an
 ///          implementation for a beacon proxy. It inherits the
 ///          BaseFeeCollector allowing for native token and ERC20

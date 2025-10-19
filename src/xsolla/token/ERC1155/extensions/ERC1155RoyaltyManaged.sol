@@ -9,7 +9,7 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title Collection template with royalties for ERC-1155
-/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com> 
+/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
 /// @notice A comprehensive ERC1155 contract with royalty
 /// management, access control, and advanced minting capabilities
 /// @dev Inherits from ERC1155, ERC1155Supply, ERC2981, AccessControl, and

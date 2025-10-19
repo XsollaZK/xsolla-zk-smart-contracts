@@ -35,6 +35,7 @@ contract StdConfigBasedTUPConfiguration is IConfiguration {
     }
 
     function getImplSourceKey() public view returns (string memory) {
-        return Sources.Source.TransparentUpgradeableProxy.getFullNicknamedName(ShortStrings.toShortString(implementationSource.toString()));
+        return Sources.Source.TransparentUpgradeableProxy
+            .getFullNicknamedName(ShortStrings.toShortString(implementationSource.toString()));
     }
 }

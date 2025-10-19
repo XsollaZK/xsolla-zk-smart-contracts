@@ -60,18 +60,12 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
             revert ChooseConfigurationFirst();
         }
         if (wiringType == SupportedWiring.PLAIN) {
-            Sources.Source source = Sources.Source(abi.decode(
-                wiringInfo,
-                (uint256)
-            ));
+            Sources.Source source = Sources.Source(abi.decode(wiringInfo, (uint256)));
             address wiredAddress = Create2.deploy(0, source.toSalt(), source.toCreationCode());
             config.set(source.toString(), wiredAddress);
             return wiredAddress;
         } else if (wiringType == SupportedWiring.PLAIN_NICKNAMED) {
-            (Sources.Source source, ShortString nickname) = abi.decode(
-                wiringInfo,
-                (Sources.Source, ShortString)
-            );
+            (Sources.Source source, ShortString nickname) = abi.decode(wiringInfo, (Sources.Source, ShortString));
             address wiredAddress = Create2.deploy(0, source.toSalt(nickname), source.toCreationCode());
             config.set(source.getFullNicknamedName(nickname), wiredAddress);
             return wiredAddress;
@@ -87,12 +81,8 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
                 }
                 Sources.Source source = Sources.Source(abi.decode(restOfInfo, (uint256)));
                 address implAddress = Create2.deploy(0, source.toSalt(), source.toCreationCode());
-                StdConfigBasedTUPConfiguration tupConfig = new StdConfigBasedTUPConfiguration(
-                    config,
-                    deployerAddress,
-                    implAddress,
-                    source
-                );
+                StdConfigBasedTUPConfiguration tupConfig =
+                    new StdConfigBasedTUPConfiguration(config, deployerAddress, implAddress, source);
                 tupConfig.startAutowiringSources();
                 return config.get(tupConfig.getImplSourceKey()).toAddress();
             } else {
@@ -118,16 +108,10 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
         }
         result = new address[](1);
         if (wiringType == SupportedWiring.PLAIN) {
-            Sources.Source source = Sources.Source(abi.decode(
-                wiringInfo,
-                (uint256)
-            ));
+            Sources.Source source = Sources.Source(abi.decode(wiringInfo, (uint256)));
             result[0] = config.get(source.toString()).toAddress();
         } else if (wiringType == SupportedWiring.PLAIN_NICKNAMED) {
-            (Sources.Source source, ShortString nickname) = abi.decode(
-                wiringInfo,
-                (Sources.Source, ShortString)
-            );
+            (Sources.Source source, ShortString nickname) = abi.decode(wiringInfo, (Sources.Source, ShortString));
             string memory sourceKey = string.concat(string.concat(source.toString(), "_"), nickname.toString());
             result[0] = config.get(sourceKey).toAddress();
         } else {
