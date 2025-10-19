@@ -11,8 +11,8 @@ import { IEIP721Mintable } from "../../../interfaces/stable/IEIP721Mintable.sol"
 
 /// @title ERC721Modular
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice ERC721Modular is a base contract for ERC721 tokens with SVG icons and IPFS support.
-/// @custom:include-in-addresses-report false
+/// @notice ERC721Modular is a base contract for ERC721 tokens with SVG icons
+/// and IPFS support. @custom:include-in-addresses-report false
 contract ERC721Modular is ERC721, ERC721Enumerable, ERC721URIStorage, AccessControl, IEIP721Mintable {
     /// @notice Role identifier for addresses that can mint tokens.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

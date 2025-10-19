@@ -9,7 +9,7 @@ import { BaseFeeCollectorInterface } from "../interfaces/drafts/BaseFeeCollector
 import { BaseFeeCollectorEventsAndErrors } from "../interfaces/drafts/BaseFeeCollectorEventsAndErrors.sol";
 
 /// @title BaseFeeCollector
-/// @author OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
+/// @author OpenSea Protocol Team and Gleb Zverev <g.zverev@xsolla.com>, Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3 
 /// @notice BaseFeeCollector is a contract that is used as an implementation
 ///          for a beacon proxy. Allows for withdrawal of the native token
 ///          and all ERC20 standard tokens from the proxy. The contract

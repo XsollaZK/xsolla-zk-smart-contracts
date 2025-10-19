@@ -200,7 +200,8 @@ contract ERC20ModularFuzzTest is Test {
         vm.assume(account != pauser);
         vm.assume(account != minter);
 
-        bytes32 role = PAUSER_ROLE; // Use a fixed role to avoid assumption issues
+        bytes32 role = PAUSER_ROLE; // Use a fixed role to avoid assumption
+            // issues
 
         token.grantRole(role, account);
 
@@ -214,7 +215,8 @@ contract ERC20ModularFuzzTest is Test {
         vm.assume(account != pauser);
         vm.assume(account != minter);
 
-        bytes32 role = MINTER_ROLE; // Use a fixed role to avoid assumption issues
+        bytes32 role = MINTER_ROLE; // Use a fixed role to avoid assumption
+            // issues
 
         // First grant the role
         token.grantRole(role, account);
@@ -231,7 +233,8 @@ contract ERC20ModularFuzzTest is Test {
         vm.assume(caller != address(0));
         vm.assume(account != address(0));
 
-        bytes32 role = PAUSER_ROLE; // Use a fixed role to avoid assumption issues
+        bytes32 role = PAUSER_ROLE; // Use a fixed role to avoid assumption
+            // issues
 
         vm.prank(caller);
         vm.expectRevert();
@@ -244,7 +247,8 @@ contract ERC20ModularFuzzTest is Test {
 
     /// @notice Fuzz test for permit functionality
     function testFuzz_Permit(uint256 privateKey, address spender, uint256 amount, uint256 deadline) public {
-        vm.assume(privateKey > 0 && privateKey < 2 ** 255); // Valid private key range
+        vm.assume(privateKey > 0 && privateKey < 2 ** 255); // Valid private key
+            // range
         vm.assume(spender != address(0));
         vm.assume(deadline > block.timestamp);
 

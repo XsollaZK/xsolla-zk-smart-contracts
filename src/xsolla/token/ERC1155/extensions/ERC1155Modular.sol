@@ -8,8 +8,8 @@ import { ISetBaseURI } from "../../../interfaces/drafts/ISetBaseURI.sol";
 
 /// @title ERC1155Modular
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice A base contract for ERC1155 tokens with minting, burning, and base URI management.
-/// @custom:include-in-addresses-report false
+/// @notice A base contract for ERC1155 tokens with minting, burning, and base
+/// URI management. @custom:include-in-addresses-report false
 contract ERC1155Modular is ERC1155, AccessControl, ISetBaseURI {
     /// @notice Role identifier for addresses that can mint tokens.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

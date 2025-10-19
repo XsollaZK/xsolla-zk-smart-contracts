@@ -209,14 +209,16 @@ contract BaseFeeCollectorFuzzTest is Test {
     function testFuzz_assignOperator_validAddresses(address newOperator) public {
         vm.assume(newOperator != address(0) && newOperator != operator);
         // Exclude precompiled contracts and problematic addresses
-        vm.assume(uint160(newOperator) > 0x1000); // Exclude low addresses entirely
+        vm.assume(uint160(newOperator) > 0x1000); // Exclude low addresses
+            // entirely
         vm.assume(newOperator != owner && newOperator != withdrawalWallet);
         vm.assume(newOperator.code.length == 0); // Ensure it's not a contract
 
         vm.prank(owner);
         collector.assignOperator(newOperator);
 
-        // Test that new operator can withdraw (this verifies the assignment worked)
+        // Test that new operator can withdraw (this verifies the assignment
+        // worked)
         vm.deal(address(collector), 1 ether);
         vm.prank(newOperator);
         collector.withdraw(withdrawalWallet, 1 ether);

@@ -9,19 +9,24 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title Collection template with royalties for ERC-1155
-/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
-/// @notice A comprehensive ERC1155 contract with royalty management, access control, and advanced minting capabilities
-/// @dev Inherits from ERC1155, ERC1155Supply, ERC2981, AccessControl, and Pausable for full functionality.
-/// DON'T FORGET TO TURN ON THE SALES STATE BEFORE MINTING!
-/// @custom:security This contract implements role-based access control and pausable functionality for enhanced security
+/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com> 
+/// @notice A comprehensive ERC1155 contract with royalty
+/// management, access control, and advanced minting capabilities
+/// @dev Inherits from ERC1155, ERC1155Supply, ERC2981, AccessControl, and
+/// Pausable for full functionality. DON'T FORGET TO TURN ON THE SALES STATE
+/// BEFORE MINTING!
+/// @custom:security This contract implements role-based access control and
+/// pausable functionality for enhanced security
 contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl, Pausable {
-    /// @notice Collection information struct containing essential collection metadata
-    /// @dev Used by getCollectionInfo() to return collection state in a single call
+    /// @notice Collection information struct containing essential collection
+    /// metadata @dev Used by getCollectionInfo() to return collection state in
+    /// a single call
     struct CollectionInfo {
         string name; /// @dev Collection name
         string symbol; /// @dev Collection symbol
         uint256 tokenPrice; /// @dev Current token price in Wei
-        uint256 maxPerTransaction; /// @dev Maximum tokens mintable per transaction
+        uint256 maxPerTransaction; /// @dev Maximum tokens mintable per
+            /// transaction
         bool saleIsActive; /// @dev Whether public sale is currently active
         bool paused; /// @dev Whether contract is paused
     }
@@ -97,7 +102,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     /// @param _tokenPrice Price per token in Wei (can be 0 for free mints)
     /// @param _maxPerTransaction Maximum tokens per transaction (0 = unlimited)
     /// @param _royaltyFactor Royalty factor in basis points (e.g., 400 = 4%)
-    /// @custom:security The deployer receives all admin roles and should transfer them as needed
+    /// @custom:security The deployer receives all admin roles and should
+    /// transfer them as needed
     constructor(
         string memory _name,
         string memory _symbol,
@@ -137,7 +143,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     /// @notice Update the price per token for public minting
     /// @dev Only callable by accounts with DEFAULT_ADMIN_ROLE
     /// @param _tokenPrice New price per token in Wei (can be 0 for free mints)
-    /// @custom:security Price changes affect all future public mints immediately
+    /// @custom:security Price changes affect all future public mints
+    /// immediately
     function setTokenPrice(uint256 _tokenPrice) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 oldPrice = tokenPrice;
         tokenPrice = _tokenPrice;
@@ -146,8 +153,9 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
 
     /// @notice Update maximum tokens allowed per transaction
     /// @dev Only callable by accounts with DEFAULT_ADMIN_ROLE
-    /// @param _maxPerTransaction New maximum tokens per transaction (0 = unlimited)
-    /// @custom:security Affects all future public minting transactions
+    /// @param _maxPerTransaction New maximum tokens per transaction (0 =
+    /// unlimited) @custom:security Affects all future public minting
+    /// transactions
     function setMaxPerTransaction(uint256 _maxPerTransaction) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 oldMax = maxPerTransaction;
         maxPerTransaction = _maxPerTransaction;
@@ -166,8 +174,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
 
     /// @notice Update the default royalty percentage for all tokens
     /// @dev Only callable by accounts with DEFAULT_ADMIN_ROLE
-    /// @param _royaltyFactor New royalty factor in basis points (max 10000 = 100%)
-    /// @custom:security Royalty changes affect all future secondary sales
+    /// @param _royaltyFactor New royalty factor in basis points (max 10000 =
+    /// 100%) @custom:security Royalty changes affect all future secondary sales
     function setRoyaltyFactor(uint96 _royaltyFactor) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_royaltyFactor > _feeDenominator()) {
             revert RoyaltyTooHigh(_royaltyFactor);
@@ -181,8 +189,9 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     /// @notice Set maximum supply limit for a specific token ID
     /// @dev Only callable by accounts with DEFAULT_ADMIN_ROLE
     /// @param tokenId The token ID to set maximum supply for
-    /// @param _maxSupply Maximum supply for this token ID (0 = unlimited supply)
-    /// @custom:security Once set, max supply cannot be increased beyond current total supply
+    /// @param _maxSupply Maximum supply for this token ID (0 = unlimited
+    /// supply) @custom:security Once set, max supply cannot be increased beyond
+    /// current total supply
     function setMaxSupplyPerToken(uint256 tokenId, uint256 _maxSupply) public onlyRole(DEFAULT_ADMIN_ROLE) {
         maxSupplyPerToken[tokenId] = _maxSupply;
         emit MaxSupplyPerTokenSet(tokenId, _maxSupply);
@@ -210,11 +219,12 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     }
 
     /// @notice Mint tokens to a recipient with payment validation
-    /// @dev Public minting function that validates sale state, payment, and supply limits
-    /// @param tokenId The token ID to mint
+    /// @dev Public minting function that validates sale state, payment, and
+    /// supply limits @param tokenId The token ID to mint
     /// @param amount Number of tokens to mint
     /// @param recipient Address that will receive the minted tokens
-    /// @custom:security Requires active sale, sufficient payment, and respects supply limits
+    /// @custom:security Requires active sale, sufficient payment, and respects
+    /// supply limits
     function mint(uint256 tokenId, uint256 amount, address recipient) external payable virtual whenNotPaused {
         if (!saleIsActive) revert SaleNotActive();
 
@@ -228,7 +238,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     /// @param tokenId The token ID to mint
     /// @param amount Number of tokens to mint
     /// @param recipient Address that will receive the minted tokens
-    /// @custom:security Only callable by MINTER_ROLE, bypasses payment requirements
+    /// @custom:security Only callable by MINTER_ROLE, bypasses payment
+    /// requirements
     function mintByRole(uint256 tokenId, uint256 amount, address recipient)
         external
         virtual
@@ -245,7 +256,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     /// @param tokenIds Array of token IDs to mint
     /// @param amounts Array of amounts corresponding to each token ID
     /// @param recipient Address that will receive all minted tokens
-    /// @custom:security Only callable by MINTER_ROLE, validates all parameters before minting
+    /// @custom:security Only callable by MINTER_ROLE, validates all parameters
+    /// before minting
     function batchMint(uint256[] calldata tokenIds, uint256[] calldata amounts, address recipient)
         external
         virtual
@@ -260,8 +272,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
             _validateMintParams(amounts[i]);
             _validateSupply(tokenIds[i], amounts[i]);
             // Gas optimization: Skip overflow check for loop counter
-            // Safe because i starts at 0, increments by 1, and is bounded by length
-            // i cannot exceed uint256.max in any realistic scenario
+            // Safe because i starts at 0, increments by 1, and is bounded by
+            // length i cannot exceed uint256.max in any realistic scenario
             unchecked {
                 ++i;
             }
@@ -271,18 +283,21 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     }
 
     /// @notice Mint tokens to multiple recipients (admin function)
-    /// @dev Allows minting different tokens to different recipients in one transaction
-    /// @param tokenIds Array of token IDs to mint
+    /// @dev Allows minting different tokens to different recipients in one
+    /// transaction @param tokenIds Array of token IDs to mint
     /// @param amounts Array of amounts corresponding to each token ID
     /// @param recipients Array of recipient addresses for each mint operation
-    /// @custom:security Only callable by MINTER_ROLE, all arrays must have equal length
+    /// @custom:security Only callable by MINTER_ROLE, all arrays must have
+    /// equal length
     function batchMintToMultiple(
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
         address[] calldata recipients
     ) external virtual onlyRole(MINTER_ROLE) whenNotPaused {
         uint256 length = tokenIds.length;
-        if (length != amounts.length || length != recipients.length) revert ArraysLengthMismatch();
+        if (length != amounts.length || length != recipients.length) {
+            revert ArraysLengthMismatch();
+        }
 
         // Validate and mint in a single loop for better gas efficiency
         for (uint256 i; i < length;) {
@@ -290,8 +305,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
             _validateSupply(tokenIds[i], amounts[i]);
             _performMint(tokenIds[i], amounts[i], recipients[i]);
             // Gas optimization: Skip overflow check for loop counter
-            // Safe because i starts at 0, increments by 1, and is bounded by length
-            // i cannot exceed uint256.max in any realistic scenario
+            // Safe because i starts at 0, increments by 1, and is bounded by
+            // length i cannot exceed uint256.max in any realistic scenario
             unchecked {
                 ++i;
             }
@@ -325,8 +340,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
         }
     }
 
-    /// @dev Validate that minting amount doesn't exceed maximum supply for token
-    /// @param tokenId Token ID being validated
+    /// @dev Validate that minting amount doesn't exceed maximum supply for
+    /// token @param tokenId Token ID being validated
     /// @param amount Number of tokens to mint
     function _validateSupply(uint256 tokenId, uint256 amount) internal view {
         uint256 maxForToken = maxSupplyPerToken[tokenId];
@@ -381,8 +396,9 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
     }
 
     /// @notice Get comprehensive collection information in a single call
-    /// @dev Useful for frontend applications to get all collection state at once
-    /// @return info Struct containing name, symbol, price, limits, and status
+    /// @dev Useful for frontend applications to get all collection state at
+    /// once @return info Struct containing name, symbol, price, limits, and
+    /// status
     function getCollectionInfo() external view returns (CollectionInfo memory info) {
         return CollectionInfo({
             name: name,
@@ -404,8 +420,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
         for (uint256 i; i < length;) {
             supplies[i] = totalSupply(tokenIds[i]);
             // Gas optimization: Skip overflow check for loop counter
-            // Safe because i starts at 0, increments by 1, and is bounded by length
-            // i cannot exceed uint256.max in any realistic scenario
+            // Safe because i starts at 0, increments by 1, and is bounded by
+            // length i cannot exceed uint256.max in any realistic scenario
             unchecked {
                 ++i;
             }
@@ -422,8 +438,8 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
         for (uint256 i; i < length;) {
             maxSupplies[i] = maxSupplyPerToken[tokenIds[i]];
             // Gas optimization: Skip overflow check for loop counter
-            // Safe because i starts at 0, increments by 1, and is bounded by length
-            // i cannot exceed uint256.max in any realistic scenario
+            // Safe because i starts at 0, increments by 1, and is bounded by
+            // length i cannot exceed uint256.max in any realistic scenario
             unchecked {
                 ++i;
             }
@@ -442,11 +458,12 @@ contract ERC1155RoyaltyManaged is ERC1155, ERC1155Supply, ERC2981, AccessControl
         return maxForToken > currentSupply ? maxForToken - currentSupply : 0;
     }
 
-    /// @notice Check if a token ID is available for minting with remaining supply
-    /// @dev Provides both availability status and exact remaining count
+    /// @notice Check if a token ID is available for minting with remaining
+    /// supply @dev Provides both availability status and exact remaining count
     /// @param tokenId Token ID to check availability for
     /// @return available True if token can be minted, false if supply exhausted
-    /// @return remainingSupply Exact number of tokens remaining (0 if unlimited or exhausted)
+    /// @return remainingSupply Exact number of tokens remaining (0 if unlimited
+    /// or exhausted)
     function isTokenAvailable(uint256 tokenId) external view returns (bool available, uint256 remainingSupply) {
         uint256 maxForToken = maxSupplyPerToken[tokenId];
         if (maxForToken == 0) return (true, 0); // Unlimited

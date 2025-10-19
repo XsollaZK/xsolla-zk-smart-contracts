@@ -27,8 +27,8 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     }
 
     /// @inheritdoc IERC7579Account
-    /// @dev this function is only callable by the entry point or the account itself
-    /// @dev this function demonstrates how to implement
+    /// @dev this function is only callable by the entry point or the account
+    /// itself @dev this function demonstrates how to implement
     /// CallType SINGLE and BATCH and ExecType DEFAULT and TRY
     /// @dev this function demonstrates how to implement hook support (modifier)
     function execute(bytes32 mode, bytes calldata executionCalldata) external payable onlyEntryPointOrSelf {
@@ -52,8 +52,9 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     }
 
     /// @dev ERC-4337 executeUserOp according to ERC-4337 v0.7
-    ///         This function is intended to be called by ERC-4337 EntryPoint.sol
-    /// @dev Ensure adequate authorization control: i.e. onlyEntryPointOrSelf
+    ///         This function is intended to be called by ERC-4337
+    /// EntryPoint.sol @dev Ensure adequate authorization control: i.e.
+    /// onlyEntryPointOrSelf
     ///      The implementation of the function is OPTIONAL
     ///
     /// @param userOp PackedUserOperation struct (see ERC-4337 v0.7+)
@@ -77,7 +78,9 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
         onlyEntryPointOrSelf
         withRegistry(module, moduleTypeId)
     {
-        if (!IModule(module).isModuleType(moduleTypeId)) revert MismatchModuleTypeId(moduleTypeId);
+        if (!IModule(module).isModuleType(moduleTypeId)) {
+            revert MismatchModuleTypeId(moduleTypeId);
+        }
 
         if (moduleTypeId == MODULE_TYPE_VALIDATOR) {
             _installValidator(module, initData);
@@ -110,8 +113,9 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
     }
 
     /// @dev ERC-4337 validateUserOp according to ERC-4337 v0.7
-    ///         This function is intended to be called by ERC-4337 EntryPoint.sol
-    /// this validation function should decode / sload the validator module to validate the userOp
+    ///         This function is intended to be called by ERC-4337
+    /// EntryPoint.sol this validation function should decode / sload the
+    /// validator module to validate the userOp
     /// and call it.
     /// @param userOp PackedUserOperation struct (see ERC-4337 v0.7+)
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)

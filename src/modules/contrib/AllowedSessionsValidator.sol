@@ -14,9 +14,11 @@ import { IValidator, IModule, MODULE_TYPE_VALIDATOR } from "src/interfaces/IERC7
 /// @title AllowedSessionsValidator
 /// @author Oleg Bedrin - <o.bedrin@xsolla.com> - Xsolla Special Initiatives
 /// @custom:security-contact security@matterlabs.dev and o.bedrin@xsolla.com
-/// @notice This contract is used to manage allowed sessions for a smart account.
-/// @notice This module is controlled by a single entity, which has the power
-/// to close all current sessions and disallow any future sessions on this module.
+/// @notice This contract is used to manage allowed sessions for a smart
+/// account. @notice This module is controlled by a single entity, which has the
+/// power
+/// to close all current sessions and disallow any future sessions on this
+/// module.
 contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     using SessionLib for SessionLib.SessionStorage;
 
@@ -29,7 +31,8 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     bytes32 public constant SESSION_REGISTRY_MANAGER_ROLE = keccak256("SESSION_REGISTRY_MANAGER_ROLE");
 
     /// @notice Mapping to track whether a session actions is allowed.
-    /// @dev The key is the hash of session actions, and the value indicates if the actions are allowed.
+    /// @dev The key is the hash of session actions, and the value indicates if
+    /// the actions are allowed.
     mapping(bytes32 sessionActionsHash => bool allowed) public areSessionActionsAllowed;
 
     constructor() {
@@ -40,8 +43,9 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     /// @notice Set whether a session actions hash is allowed or not.
     /// @param sessionActionsHash The hash of the session actions.
     /// @param allowed Boolean indicating if the session actions are allowed.
-    /// @dev Session actions represent the set of operations, such as fee limits, call policies, and transfer policies,
-    /// that define the behavior and constraints of a session.
+    /// @dev Session actions represent the set of operations, such as fee
+    /// limits, call policies, and transfer policies, that define the behavior
+    /// and constraints of a session.
     function setSessionActionsAllowed(bytes32 sessionActionsHash, bool allowed)
         external
         virtual
@@ -56,7 +60,8 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     /// @notice Get the hash of session actions from a session specification.
     /// @param sessionSpec The session specification.
     /// @return The hash of the session actions.
-    /// @dev The session actions hash is derived from the session's fee limits, call policies, and transfer policies.
+    /// @dev The session actions hash is derived from the session's fee limits,
+    /// call policies, and transfer policies.
     function getSessionActionsHash(SessionLib.SessionSpec memory sessionSpec) public view virtual returns (bytes32) {
         uint256 callPoliciesLength = sessionSpec.callPolicies.length;
         bytes memory callPoliciesEncoded;
@@ -79,8 +84,8 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
 
     /// @notice Create a new session for an account.
     /// @param sessionSpec The session specification to create a session with.
-    /// @dev A session is a temporary authorization for an account to perform specific actions, defined by the session
-    /// specification.
+    /// @dev A session is a temporary authorization for an account to perform
+    /// specific actions, defined by the session specification.
     function _createSession(SessionLib.SessionSpec memory sessionSpec) internal virtual override(SessionKeyValidator) {
         bytes32 sessionActionsHash = getSessionActionsHash(sessionSpec);
         require(areSessionActionsAllowed[sessionActionsHash], SessionLib.ActionsNotAllowed(sessionActionsHash));

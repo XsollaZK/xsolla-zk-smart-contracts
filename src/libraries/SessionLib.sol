@@ -40,8 +40,8 @@ library SessionLib {
     error InvalidNonceKey(uint192 nonceKey, uint192 expectedNonceKey);
     error ActionsNotAllowed(bytes32 actionsHash);
 
-    /// @notice We do not permit opening multiple identical sessions (even after one is closed,
-    /// e.g.).
+    /// @notice We do not permit opening multiple identical sessions (even after
+    /// one is closed, e.g.).
     /// For each session key, its session status can only be changed
     /// from NotInitialized to Active, and from Active to Closed.
     enum Status {
@@ -52,8 +52,9 @@ library SessionLib {
 
     /// @notice This struct is used to track usage information for each session.
     /// Along with `status`, this is considered the session state.
-    /// While everything else is considered the session spec, and is stored offchain.
-    /// @dev Storage layout of this struct is unusual to conform to ERC-7562 storage access
+    /// While everything else is considered the session spec, and is stored
+    /// offchain. @dev Storage layout of this struct is unusual to conform to
+    /// ERC-7562 storage access
     /// restrictions during validation.
     /// Each innermost mapping is always mapping(address account => ...).
     struct SessionStorage {
@@ -108,7 +109,8 @@ library SessionLib {
     /// @notice This struct is provided by the account to create a session.
     /// It is used to define the session's policies, limits and constraints.
     /// Only its hash is stored onchain, and the full struct is provided with
-    /// each transaction in calldata via `validatorData`, encoded in the signature.
+    /// each transaction in calldata via `validatorData`, encoded in the
+    /// signature.
     struct SessionSpec {
         address signer;
         uint48 expiresAt;
@@ -157,8 +159,8 @@ library SessionLib {
     /// @param limit The limit to check.
     /// @param tracker The usage tracker to update.
     /// @param value The tracked value to check the limit against.
-    /// @param period The period ID to check the limit against. Ignored if the limit is not of type
-    /// Allowance.
+    /// @param period The period ID to check the limit against. Ignored if the
+    /// limit is not of type Allowance.
     /// @dev Reverts if the limit is exceeded or the period is invalid.
     function checkAndUpdate(UsageLimit memory limit, UsageTracker storage tracker, uint256 value, uint48 period)
         internal
@@ -189,7 +191,8 @@ library SessionLib {
     /// @param data The transaction data to check the constraint against.
     /// @param period The period ID to check the allowances against.
     /// @dev Reverts if the constraint is not met.
-    /// @dev Forwards the call to `checkAndUpdate(limit, ...)` on the limit of the constraint.
+    /// @dev Forwards the call to `checkAndUpdate(limit, ...)` on the limit of
+    /// the constraint.
     function checkAndUpdate(
         Constraint memory constraint,
         UsageTracker storage tracker,
@@ -223,25 +226,28 @@ library SessionLib {
     /// @param state The session storage to update.
     /// @param userOp The user operation to check the fee of.
     /// @param spec The session spec to check the fee limit against.
-    /// @param periodId The period ID to check the fee limit against. Ignored if the limit is not of
-    /// type Allowance.
+    /// @param periodId The period ID to check the fee limit against. Ignored if
+    /// the limit is not of type Allowance.
     /// @dev Reverts if the fee limit is exceeded.
     /// @dev This is split from `validate` to prevent gas estimation failures.
     /// When this check was part of `validate`, gas estimation could fail due to
-    /// fee limit being smaller than the upper bound of the gas estimation binary search.
-    /// By splitting this check, we can now have this order of operations in `validateTransaction`:
+    /// fee limit being smaller than the upper bound of the gas estimation
+    /// binary search. By splitting this check, we can now have this order of
+    /// operations in `validateTransaction`:
     /// 1. session.validate()
     /// 2. ECDSA.tryRecover()
     /// 3. session.validateFeeLimit()
-    /// This way, gas estimation will exit on step 2 instead of failing, but will still run through
-    /// most of the computation needed to validate the session.
+    /// This way, gas estimation will exit on step 2 instead of failing, but
+    /// will still run through most of the computation needed to validate the
+    /// session.
     function validateFeeLimit(
         SessionStorage storage state,
         PackedUserOperation calldata userOp,
         SessionSpec memory spec,
         uint48 periodId
     ) internal returns (uint48 validAfter, uint48 validUntil) {
-        // If a paymaster is paying the fee, we don't need to check the fee limit
+        // If a paymaster is paying the fee, we don't need to check the fee
+        // limit
         if (userOp.paymasterAndData.length == 0) {
             uint256 gasPrice = userOp.gasPrice();
             uint256 gasLimit = userOp.unpackVerificationGasLimit() + userOp.unpackCallGasLimit();
@@ -258,18 +264,18 @@ library SessionLib {
         range[1] = newUntil < range[1] ? newUntil : range[1];
     }
 
-    /// @notice Validates the transaction against the session spec and updates the usage trackers.
-    /// @param state The session storage to update.
+    /// @notice Validates the transaction against the session spec and updates
+    /// the usage trackers. @param state The session storage to update.
     /// @param userOp The user operation to validate.
     /// @param spec The session spec to validate against.
     /// @param periodIds The period IDs to check the allowances against.
-    /// @dev periodId is defined as block.timestamp / limit.period if limitType == Allowance, and 0
-    /// otherwise (which will be ignored).
+    /// @dev periodId is defined as block.timestamp / limit.period if limitType
+    /// == Allowance, and 0 otherwise (which will be ignored).
     /// periodIds[0] is for fee limit (not used in this function),
     /// periodIds[1] is for value limit,
     /// periodIds[2:] are for call constraints, if there are any.
-    /// It is required to pass them in (instead of computing via block.timestamp) since during
-    /// validation
+    /// It is required to pass them in (instead of computing via
+    /// block.timestamp) since during validation
     /// we can only assert the range of the timestamp, but not access its value.
     function validate(
         SessionStorage storage state,
@@ -294,7 +300,8 @@ library SessionLib {
         // - next 32 bytes: data offset
         // - at offset: data length
         // - next 32 bytes: data
-        uint256 offset = uint256(bytes32(userOp.callData[36:68])) + 4; // offset does not include the selector
+        uint256 offset = uint256(bytes32(userOp.callData[36:68])) + 4; // offset
+            // does not include the selector
         uint256 length = uint256(bytes32(userOp.callData[offset:offset + 32]));
         (address target, uint256 value, bytes calldata callData) =
             LibERC7579.decodeSingle(userOp.callData[offset + 32:offset + 32 + length]);
@@ -366,7 +373,8 @@ library SessionLib {
             return limit.limit - tracker.lifetimeUsage[account];
         }
         if (limit.limitType == LimitType.Allowance) {
-            // this is not used during validation, so it's fine to use block.timestamp
+            // this is not used during validation, so it's fine to use
+            // block.timestamp
             uint64 period = uint64(block.timestamp / limit.period);
             return limit.limit - tracker.allowanceUsage[period][account];
         }
@@ -378,8 +386,8 @@ library SessionLib {
     /// @param session The session storage to get the state from.
     /// @param account The account to get the state for.
     /// @param spec The session spec to get the state for.
-    /// @return The session state: status, remaining fee limit, transfer limits, call value and call
-    /// parameter limits.
+    /// @return The session state: status, remaining fee limit, transfer limits,
+    /// call value and call parameter limits.
     function getState(SessionStorage storage session, address account, SessionSpec calldata spec)
         internal
         view
@@ -392,7 +400,8 @@ library SessionLib {
 
         LimitState[] memory transferValue = new LimitState[](spec.transferPolicies.length);
         LimitState[] memory callValue = new LimitState[](spec.callPolicies.length);
-        LimitState[] memory callParams = new LimitState[](totalConstraints); // there will be empty
+        LimitState[] memory callParams = new LimitState[](totalConstraints); // there
+            // will be empty
             // ones at the end
         uint256 paramLimitIndex = 0;
 

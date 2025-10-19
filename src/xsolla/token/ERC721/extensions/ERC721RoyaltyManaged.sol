@@ -11,8 +11,9 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IEIP721Mintable } from "../../../interfaces/stable/IEIP721Mintable.sol";
 
 /// @title ERC721 NFT Collection with Royalty Management
-/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com>
-/// @notice A comprehensive ERC721 implementation with royalty management, access control, and flexible minting
+/// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3, Gleb Zverev <g.zverev@xsolla.com> 
+/// @notice A comprehensive ERC721 implementation with
+/// royalty management, access control, and flexible minting
 /// @dev This contract combines multiple OpenZeppelin extensions:
 ///      - ERC721Enumerable: For token enumeration and supply tracking
 ///      - ERC721Royalty: For EIP-2981 royalty standard support
@@ -40,27 +41,34 @@ contract ERC721RoyaltyManaged is
         string name; /// @dev The collection name from ERC721
         string symbol; /// @dev The collection symbol from ERC721
         uint256 totalSupply; /// @dev Current number of minted tokens
-        uint256 maxSupply; /// @dev Maximum tokens that can be minted (0 = unlimited)
+        uint256 maxSupply; /// @dev Maximum tokens that can be minted (0 =
+            /// unlimited)
         uint256 tokenPrice; /// @dev Price per token in wei
-        uint256 maxPerTransaction; /// @dev Maximum tokens per transaction (0 = unlimited)
+        uint256 maxPerTransaction; /// @dev Maximum tokens per transaction (0 =
+            /// unlimited)
         bool saleIsActive; /// @dev Whether public minting is currently enabled
         bool paused; /// @dev Whether the contract is paused
     }
 
     /// @notice Optimized storage configuration for collection parameters
-    /// @dev Packed into a single storage slot for gas efficiency (32 bytes total)
-    ///      Fields are ordered by size to minimize storage usage
+    /// @dev Packed into a single storage slot for gas efficiency (32 bytes
+    /// total) Fields are ordered by size to minimize storage usage
     struct CollectionConfig {
-        uint96 tokenPrice; /// @dev Price per token in wei (supports up to ~79 billion ETH)
-        uint96 royaltyFactorBps; /// @dev Royalty percentage in basis points (10000 = 100%)
-        uint32 maxSupply; /// @dev Maximum supply (supports up to ~4.3 billion tokens)
-        uint16 maxPerTransaction; /// @dev Max tokens per transaction (supports up to 65,535)
+        uint96 tokenPrice; /// @dev Price per token in wei (supports up to ~79
+            /// billion ETH)
+        uint96 royaltyFactorBps; /// @dev Royalty percentage in basis points
+            /// (10000 = 100%)
+        uint32 maxSupply; /// @dev Maximum supply (supports up to ~4.3 billion
+            /// tokens)
+        uint16 maxPerTransaction; /// @dev Max tokens per transaction (supports
+            /// up to 65,535)
         bool saleIsActive; /// @dev Whether public sale is active
             // 1 byte remaining in the 32-byte slot
     }
 
     /// @notice Role identifier for administrative functions
-    /// @dev Grants access to configuration changes, pausing, and fund withdrawal
+    /// @dev Grants access to configuration changes, pausing, and fund
+    /// withdrawal
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
 
     /// @notice Role identifier for token minting privileges
@@ -143,12 +151,14 @@ contract ERC721RoyaltyManaged is
     /// @notice Initialize the NFT collection with configuration parameters
     /// @param name The name of the ERC721 collection
     /// @param symbol The symbol of the ERC721 collection
-    /// @param _maxSupply Maximum number of tokens that can be minted (0 for unlimited)
-    /// @param _tokenPrice Price per token in wei for public minting
-    /// @param _maxPerTransaction Maximum tokens allowed per transaction (0 for unlimited)
-    /// @param _royaltyFactor Default royalty percentage in basis points (10000 = 100%)
-    /// @param __baseURI Base URI for token metadata when individual URIs are not set
-    /// @dev The deployer receives all admin roles and becomes the default royalty recipient
+    /// @param _maxSupply Maximum number of tokens that can be minted (0 for
+    /// unlimited) @param _tokenPrice Price per token in wei for public minting
+    /// @param _maxPerTransaction Maximum tokens allowed per transaction (0 for
+    /// unlimited) @param _royaltyFactor Default royalty percentage in basis
+    /// points (10000 = 100%)
+    /// @param __baseURI Base URI for token metadata when individual URIs are
+    /// not set @dev The deployer receives all admin roles and becomes the
+    /// default royalty recipient
     constructor(
         uint32 _maxSupply,
         uint96 _tokenPrice,
@@ -181,7 +191,8 @@ contract ERC721RoyaltyManaged is
     /// @notice Set the metadata URI for a specific token
     /// @param tokenId The ID of the token to set the URI for
     /// @param _tokenURI The new URI for the token's metadata
-    /// @dev Requires URI_SETTER_ROLE. Individual token URIs override the base URI
+    /// @dev Requires URI_SETTER_ROLE. Individual token URIs override the base
+    /// URI
     function setTokenURI(uint256 tokenId, string calldata _tokenURI) external onlyRole(URI_SETTER_ROLE) {
         _setTokenURI(tokenId, _tokenURI);
     }
@@ -195,7 +206,9 @@ contract ERC721RoyaltyManaged is
         onlyRole(URI_SETTER_ROLE)
     {
         uint256 length = tokenIds.length;
-        if (length != _tokenURIs.length) revert ArrayLengthMismatch(length, _tokenURIs.length);
+        if (length != _tokenURIs.length) {
+            revert ArrayLengthMismatch(length, _tokenURIs.length);
+        }
 
         for (uint256 i; i < length;) {
             _setTokenURI(tokenIds[i], _tokenURIs[i]);
@@ -208,7 +221,8 @@ contract ERC721RoyaltyManaged is
 
     /// @notice Enable or disable public token sales
     /// @param _saleIsActive True to enable sales, false to disable
-    /// @dev Requires DEFAULT_ADMIN_ROLE. When disabled, only MINTER_ROLE can mint
+    /// @dev Requires DEFAULT_ADMIN_ROLE. When disabled, only MINTER_ROLE can
+    /// mint
     function setSaleState(bool _saleIsActive) external onlyRole(DEFAULT_ADMIN_ROLE) {
         config.saleIsActive = _saleIsActive;
         emit SaleStateChanged(_saleIsActive);
@@ -224,8 +238,9 @@ contract ERC721RoyaltyManaged is
     }
 
     /// @notice Update the maximum tokens allowed per transaction
-    /// @param _maxPerTransaction New maximum tokens per transaction (0 for unlimited)
-    /// @dev Requires DEFAULT_ADMIN_ROLE. Affects future public minting
+    /// @param _maxPerTransaction New maximum tokens per transaction (0 for
+    /// unlimited) @dev Requires DEFAULT_ADMIN_ROLE. Affects future public
+    /// minting
     function setMaxPerTransaction(uint16 _maxPerTransaction) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 oldMax = config.maxPerTransaction;
         config.maxPerTransaction = _maxPerTransaction;
@@ -234,7 +249,8 @@ contract ERC721RoyaltyManaged is
 
     /// @notice Update the base URI for token metadata
     /// @param baseURI New base URI string
-    /// @dev Requires URI_SETTER_ROLE. Used when individual token URIs are not set
+    /// @dev Requires URI_SETTER_ROLE. Used when individual token URIs are not
+    /// set
     function setBaseURI(string calldata baseURI) external onlyRole(URI_SETTER_ROLE) {
         string memory oldURI = _baseTokenURI;
         _baseTokenURI = baseURI;
@@ -242,12 +258,15 @@ contract ERC721RoyaltyManaged is
     }
 
     /// @notice Update the default royalty percentage for the collection
-    /// @param _royaltyFactor New royalty percentage in basis points (10000 = 100%)
-    /// @dev Requires DEFAULT_ADMIN_ROLE. Must not exceed the maximum allowed royalty
+    /// @param _royaltyFactor New royalty percentage in basis points (10000 =
+    /// 100%) @dev Requires DEFAULT_ADMIN_ROLE. Must not exceed the maximum
+    /// allowed royalty
     /// @dev Sets the caller as the royalty recipient
     function setRoyaltyFactor(uint96 _royaltyFactor) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint96 maxBps = _feeDenominator();
-        if (_royaltyFactor > maxBps) revert RoyaltyTooHigh(_royaltyFactor, maxBps);
+        if (_royaltyFactor > maxBps) {
+            revert RoyaltyTooHigh(_royaltyFactor, maxBps);
+        }
         uint96 oldRoyalty = config.royaltyFactorBps;
         config.royaltyFactorBps = _royaltyFactor;
         // Get the current admin role holder for royalty recipient
@@ -256,7 +275,8 @@ contract ERC721RoyaltyManaged is
     }
 
     /// @notice Pause all token transfers and minting
-    /// @dev Requires DEFAULT_ADMIN_ROLE. Emergency function to halt contract operations
+    /// @dev Requires DEFAULT_ADMIN_ROLE. Emergency function to halt contract
+    /// operations
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
@@ -268,7 +288,8 @@ contract ERC721RoyaltyManaged is
     }
 
     /// @notice Withdraw the contract's ETH balance to the caller
-    /// @dev Requires DEFAULT_ADMIN_ROLE. Transfers all contract funds to the caller
+    /// @dev Requires DEFAULT_ADMIN_ROLE. Transfers all contract funds to the
+    /// caller
     function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
         Address.sendValue(payable(_msgSender()), address(this).balance);
     }
@@ -284,8 +305,8 @@ contract ERC721RoyaltyManaged is
     /// @notice Mint multiple tokens to the specified recipient
     /// @param amount Number of tokens to mint
     /// @param recipient Address to receive the minted tokens
-    /// @dev Requires sufficient payment, active sale, and respects transaction limits
-    /// @dev Contract must not be paused
+    /// @dev Requires sufficient payment, active sale, and respects transaction
+    /// limits @dev Contract must not be paused
     function mint(uint256 amount, address recipient) public payable whenNotPaused {
         CollectionConfig memory cfg = config; // Load to memory once
 
@@ -317,7 +338,9 @@ contract ERC721RoyaltyManaged is
         whenNotPaused
     {
         uint256 length = amounts.length;
-        if (length != recipients.length) revert ArrayLengthMismatch(length, recipients.length);
+        if (length != recipients.length) {
+            revert ArrayLengthMismatch(length, recipients.length);
+        }
 
         uint256 totalAmount;
         for (uint256 i; i < length;) {
@@ -326,8 +349,8 @@ contract ERC721RoyaltyManaged is
             // UNCHECKED SECTION 1: Loop increment
             // Safe because: i starts at 0 and increments by 1 each iteration
             // Bounds: i < length, so maximum value is (length - 1)
-            // Since length is from .length property, it cannot exceed type(uint256).max
-            // Therefore i + 1 cannot overflow
+            // Since length is from .length property, it cannot exceed
+            // type(uint256).max Therefore i + 1 cannot overflow
             unchecked {
                 ++i;
             }
@@ -347,7 +370,8 @@ contract ERC721RoyaltyManaged is
     /// @notice Get the metadata URI for a specific token
     /// @param tokenId The ID of the token to query
     /// @return The complete URI for the token's metadata
-    /// @dev Returns individual token URI if set, otherwise constructs from base URI
+    /// @dev Returns individual token URI if set, otherwise constructs from base
+    /// URI
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
         return ERC721URIStorage.tokenURI(tokenId);
     }

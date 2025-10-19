@@ -96,7 +96,8 @@ contract ERC20FactoryFuzzTest is Test {
         vm.prank(owner);
         factory.deployERC20(name, symbol, sameAddress, sameAddress, sameAddress);
 
-        // The deployment should succeed even when all roles are assigned to the same address
+        // The deployment should succeed even when all roles are assigned to the
+        // same address
     }
 
     /// @notice Fuzz test to verify deployed token properties

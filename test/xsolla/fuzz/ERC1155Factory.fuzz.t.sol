@@ -112,7 +112,8 @@ contract ERC1155FactoryFuzzTest is Test {
 
         assertEq(initialCodeSize, finalCodeSize);
         assertEq(factory.owner(), owner); // Owner should remain unchanged
-            // success variable is intentionally not checked as we're testing state consistency
+            // success variable is intentionally not checked as we're testing
+            // state consistency
     }
 
     function testFuzz_deployEmptyURI() public {

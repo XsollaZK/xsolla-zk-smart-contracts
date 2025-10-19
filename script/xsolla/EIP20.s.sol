@@ -7,7 +7,7 @@ import { ERC20Factory } from "src/xsolla/token/ERC20/ERC20Factory.sol";
 import { ERC20Modular } from "src/xsolla/token/ERC20/extensions/ERC20Modular.sol";
 import { ERC20Claimer } from "src/xsolla/token/ERC20/ERC20Claimer.sol";
 
-import { DeployStage } from "./base/DeployStage.s.sol";
+import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
 
 contract EIP20 is DeployStage {
     error ERC20ModularNotDeployed();

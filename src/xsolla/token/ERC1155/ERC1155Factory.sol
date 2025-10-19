@@ -8,10 +8,12 @@ import { ERC1155Modular } from "./extensions/ERC1155Modular.sol";
 
 /// @title ERC1155Factory
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice A factory contract for deploying ERC1155 collections with base URI management.
+/// @notice A factory contract for deploying ERC1155 collections with base URI
+/// management.
 contract ERC1155Factory is Ownable {
     /// @notice Emitted when a new collection is deployed.
-    /// @param newCollectionAddress The address of the newly deployed collection.
+    /// @param newCollectionAddress The address of the newly deployed
+    /// collection.
     event NewCollectionDeployed(address indexed newCollectionAddress);
 
     /// @notice The constructor sets the initial owner to the deployer.

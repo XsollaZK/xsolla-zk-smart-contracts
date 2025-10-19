@@ -8,8 +8,9 @@ import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 
 /// @title ERC20Modular
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice ERC20 token with pausable, mintable, and permit (EIP-2612) features, using role-based access control.
-/// @custom:security-contact o.bedrin@xsolla.com
+/// @notice ERC20 token with pausable, mintable, and permit (EIP-2612) features,
+/// using role-based access control. @custom:security-contact
+/// o.bedrin@xsolla.com
 /// @custom:include-in-addresses-report false
 contract ERC20Modular is ERC20, ERC20Pausable, AccessControl, ERC20Permit {
     /// @notice Role identifier for pausers

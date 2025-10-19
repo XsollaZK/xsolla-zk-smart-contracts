@@ -6,7 +6,7 @@ import { console } from "forge-std/console.sol";
 import { BaseFeeCollector } from "src/xsolla/collector/BaseFeeCollector.sol";
 import { EthereumFeeCollector } from "src/xsolla/collector/EthereumFeeCollector.sol";
 
-import { DeployStage } from "./base/DeployStage.s.sol";
+import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
 
 /// @title SeaportFeesCollectors Deployment Script
 /// @notice Minimal deployment for BaseFeeCollector and EthereumFeeCollector
@@ -53,8 +53,9 @@ contract SeaportFeesCollectors is DeployStage {
         baseFeeCollector.withdrawERC20Tokens(withdrawalWallet, tokenContract, amount);
     }
 
-    /// @notice Helper function to unwrap and withdraw WETH from EthereumFeeCollector
-    /// @param withdrawalWallet The wallet to receive the ETH
+    /// @notice Helper function to unwrap and withdraw WETH from
+    /// EthereumFeeCollector @param withdrawalWallet The wallet to receive the
+    /// ETH
     /// @param wrappedTokenContract The WETH contract address
     /// @param amount Amount to unwrap and withdraw
     function unwrapAndWithdrawFromEthereumFeeCollector(

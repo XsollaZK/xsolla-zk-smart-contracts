@@ -93,7 +93,8 @@ contract WETH9 {
      * imposed by `transfer`, making them unable to receive funds via
      * `transfer`. {sendValue} removes this limitation.
      *
-     * https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     * https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now/[Learn
+     * more].
      *
      * IMPORTANT: because control is transferred to `recipient`, care must be
      * taken to not create reentrancy vulnerabilities.

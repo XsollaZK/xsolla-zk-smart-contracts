@@ -12,20 +12,9 @@ import { console } from "forge-std/console.sol";
 import { MSAFactory } from "src/MSAFactory.sol";
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
 
-import { Configuration } from "./Configuration.s.sol";
-import { Artifacts } from "./Artifacts.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
-abstract contract DeployStage is Script, Configuration {
-    using Artifacts for Artifacts.Artifact;
-
-    function _makeTUPWithId(address impl, bytes32 uniqueId) internal virtual returns (address) {
-        return address(new TransparentUpgradeableProxy{salt: Artifacts.Artifact.TransparentUpgradeableProxy.toSalt(uniqueId)}(impl, msg.sender, ""));
-    }
-    
-    function _makeTUP(address impl) internal virtual returns (address) {
-        return address(new TransparentUpgradeableProxy(impl, msg.sender, ""));
-    }
-
+abstract contract DeployStage is Script, Autowirable {
     function _deployAccount(address factory, address[] memory modules, bytes32 accountId, uint256 amount)
         internal
         virtual

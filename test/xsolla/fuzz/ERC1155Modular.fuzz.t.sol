@@ -75,7 +75,8 @@ contract ERC1155ModularFuzzTest is Test {
 
     function testFuzz_mint(address to, uint256 tokenId, uint256 amount) public {
         vm.assume(to != address(0));
-        vm.assume(to.code.length == 0); // Only EOA addresses to avoid callback issues
+        vm.assume(to.code.length == 0); // Only EOA addresses to avoid callback
+            // issues
         vm.assume(amount > 0 && amount <= type(uint128).max);
         vm.assume(tokenId <= type(uint128).max);
 

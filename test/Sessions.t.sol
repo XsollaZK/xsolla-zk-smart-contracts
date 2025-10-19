@@ -97,7 +97,8 @@ contract SessionsTest is MSATest {
     function testRevert_useSession() public {
         test_createSession();
 
-        bytes memory call = encodeSingle(recipient, 0.11 ether, ""); // more than maxValuePerUse
+        bytes memory call = encodeSingle(recipient, 0.11 ether, ""); // more
+            // than maxValuePerUse
         bytes memory callData = abi.encodeCall(IERC7579Account.execute, (simpleSingleMode(), call));
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);

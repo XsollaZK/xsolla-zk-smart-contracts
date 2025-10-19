@@ -17,15 +17,17 @@ interface IModule {
     error AlreadyInitialized(address smartAccount);
     error NotInitialized(address smartAccount);
 
-    /// @dev This function is called by the smart account during installation of the module
-    /// @param data arbitrary data that may be required on the module during `onInstall`
+    /// @dev This function is called by the smart account during installation of
+    /// the module @param data arbitrary data that may be required on the module
+    /// during `onInstall`
     /// initialization
     ///
     /// MUST revert on error
     function onInstall(bytes calldata data) external;
 
-    /// @dev This function is called by the smart account during uninstallation of the module
-    /// @param data arbitrary data that may be required on the module during `onUninstall`
+    /// @dev This function is called by the smart account during uninstallation
+    /// of the module @param data arbitrary data that may be required on the
+    /// module during `onUninstall`
     /// de-initialization
     ///
     /// MUST revert on error
@@ -37,7 +39,8 @@ interface IModule {
     /// MUST return true if the module is of the given type and false otherwise
     function isModuleType(uint256 moduleTypeId) external view returns (bool);
 
-    /// @dev Returns if the module was already initialized for a provided smartaccount
+    /// @dev Returns if the module was already initialized for a provided
+    /// smartaccount
     function isInitialized(address smartAccount) external view returns (bool);
 }
 
@@ -45,10 +48,12 @@ interface IValidator is IModule {
     error InvalidTargetAddress(address target);
 
     /// @dev Validates a transaction on behalf of the account.
-    ///         This function is intended to be called by the MSA during the ERC-4337 validaton phase
-    ///         Note: solely relying on bytes32 hash and signature is not suffcient for some
-    /// validation implementations (i.e. SessionKeys often need access to userOp.calldata)
-    /// @param userOp The user operation to be validated. The userOp MUST NOT contain any metadata.
+    ///         This function is intended to be called by the MSA during the
+    /// ERC-4337 validaton phase Note: solely relying on bytes32 hash and
+    /// signature is not suffcient for some
+    /// validation implementations (i.e. SessionKeys often need access to
+    /// userOp.calldata) @param userOp The user operation to be validated. The
+    /// userOp MUST NOT contain any metadata.
     /// The MSA MUST clean up the userOp before sending it to the validator.
     /// @param userOpHash The hash of the user operation to be validated
     /// @return return value according to ERC-4337

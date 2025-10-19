@@ -40,7 +40,8 @@ contract ERC1155ClaimerFuzzTest is Test {
 
     function testFuzz_claim(address claimant, uint256 amount, uint256 tokenId) public {
         vm.assume(claimant != address(0));
-        vm.assume(claimant.code.length == 0); // Only EOAs to avoid ERC1155InvalidReceiver
+        vm.assume(claimant.code.length == 0); // Only EOAs to avoid
+            // ERC1155InvalidReceiver
         vm.assume(amount > 0 && amount <= type(uint64).max);
         vm.assume(tokenId <= type(uint64).max);
 
@@ -62,7 +63,8 @@ contract ERC1155ClaimerFuzzTest is Test {
 
     function testFuzz_doubleClaim(address claimant) public {
         vm.assume(claimant != address(0));
-        vm.assume(claimant.code.length == 0); // Only EOAs to avoid ERC1155InvalidReceiver
+        vm.assume(claimant.code.length == 0); // Only EOAs to avoid
+            // ERC1155InvalidReceiver
 
         // First claim should succeed
         vm.prank(claimant);
@@ -136,7 +138,8 @@ contract ERC1155ClaimerFuzzTest is Test {
 
     function testFuzz_claimWithInvalidToken(address claimant) public {
         vm.assume(claimant != address(0));
-        vm.assume(claimant.code.length == 0); // Only EOAs to avoid ERC1155InvalidReceiver
+        vm.assume(claimant.code.length == 0); // Only EOAs to avoid
+            // ERC1155InvalidReceiver
 
         // Create a different token that claimer doesn't have minter role for
         ERC1155Modular otherToken = new ERC1155Modular();
@@ -175,7 +178,8 @@ contract ERC1155ClaimerFuzzTest is Test {
 
     function testFuzz_claimStatusTracking(address claimant) public {
         vm.assume(claimant != address(0));
-        vm.assume(claimant.code.length == 0); // Only EOAs to avoid ERC1155InvalidReceiver
+        vm.assume(claimant.code.length == 0); // Only EOAs to avoid
+            // ERC1155InvalidReceiver
 
         // Initially not claimed
         assertFalse(claimer.isClaimed(claimant));
@@ -190,7 +194,8 @@ contract ERC1155ClaimerFuzzTest is Test {
 
     function testFuzz_eventEmission(address claimant, uint256 amount, uint256 tokenId) public {
         vm.assume(claimant != address(0));
-        vm.assume(claimant.code.length == 0); // Only EOAs to avoid ERC1155InvalidReceiver
+        vm.assume(claimant.code.length == 0); // Only EOAs to avoid
+            // ERC1155InvalidReceiver
         vm.assume(amount > 0 && amount <= type(uint64).max);
         vm.assume(tokenId <= type(uint64).max);
 

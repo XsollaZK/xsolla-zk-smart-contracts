@@ -6,8 +6,8 @@ import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 /// @title SVGIconsLib
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
 /// @notice The library generates SVG icons for NFTs.
-/// @dev Uses Base64 encoding to generate SVG icons and returns them as JSON data compatible with OpenSea-like
-/// marketplaces.
+/// @dev Uses Base64 encoding to generate SVG icons and returns them as JSON
+/// data compatible with OpenSea-like marketplaces.
 library SVGIconsLib {
     /// @notice Represents a field in the SVG icon.
     /// @param name The name of the field.

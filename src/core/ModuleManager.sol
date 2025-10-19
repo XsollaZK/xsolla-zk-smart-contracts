@@ -6,8 +6,9 @@ import "../interfaces/IERC7579Module.sol";
 
 /// @title ModuleManager
 /// @author zeroknots.eth | rhinestone.wtf
-/// @dev This contract manages Validator, Executor and Fallback modules for the MSA
-/// NOTE: the linked list is just an example. accounts may implement this differently
+/// @dev This contract manages Validator, Executor and Fallback modules for the
+/// MSA NOTE: the linked list is just an example. accounts may implement this
+/// differently
 abstract contract ModuleManager {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -57,18 +58,22 @@ abstract contract ModuleManager {
     }
 
     modifier onlyExecutorModule() {
-        if (!$moduleManager().$executors.contains(msg.sender)) revert InvalidModule(msg.sender);
+        if (!$moduleManager().$executors.contains(msg.sender)) {
+            revert InvalidModule(msg.sender);
+        }
         _;
     }
 
     modifier onlyValidatorModule(address validator) {
-        if (!$moduleManager().$valdiators.contains(validator)) revert InvalidModule(validator);
+        if (!$moduleManager().$valdiators.contains(validator)) {
+            revert InvalidModule(validator);
+        }
         _;
     }
 
-    /////////////////////////////////////////////////////
-    //  Manage Validators
-    ////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // Manage Validators
+    // //////////////////////////////////////////////////
 
     function _installValidator(address validator, bytes calldata data) internal virtual {
         require($moduleManager().$valdiators.add(validator), AlreadyInstalled(validator));
@@ -190,8 +195,10 @@ abstract contract ModuleManager {
 
         if (handler == address(0)) {
             // 0x150b7a02: `onERC721Received(address,address,uint256,bytes)`.
-            // 0xf23a6e61: `onERC1155Received(address,address,uint256,uint256,bytes)`.
-            // 0xbc197c81: `onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)`.
+            // 0xf23a6e61:
+            // `onERC1155Received(address,address,uint256,uint256,bytes)`.
+            // 0xbc197c81:
+            // `onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)`.
             if (msg.sig == 0x150b7a02 || msg.sig == 0xf23a6e61 || msg.sig == 0xbc197c81) {
                 // These are the ERC721 and ERC1155 safe transfer callbacks.
                 // We return the selector as a response to the callback.
@@ -214,8 +221,9 @@ abstract contract ModuleManager {
             let calldataPtr := allocate(calldatasize())
             calldatacopy(calldataPtr, 0, calldatasize())
 
-            // The msg.sender address is shifted to the left by 12 bytes to remove the padding
-            // Then the address without padding is stored right after the calldata
+            // The msg.sender address is shifted to the left by 12 bytes to
+            // remove the padding Then the address without padding is stored
+            // right after the calldata
             let senderPtr := allocate(20)
             mstore(senderPtr, shl(96, caller()))
 

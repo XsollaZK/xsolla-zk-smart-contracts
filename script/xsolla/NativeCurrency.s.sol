@@ -6,13 +6,13 @@ import { console } from "forge-std/console.sol";
 import { WETH9 } from "src/xsolla/WETH9.sol";
 import { Faucet } from "src/xsolla/Faucet.sol";
 
-import { Artifacts } from "./base/Artifacts.s.sol";
-import { DeployStage } from "./base/DeployStage.s.sol";
+import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
+import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
 
 /// @title NativeCurrency Deployment Script
 /// @notice Minimal deployment for WETH9 and Faucet contracts
 contract NativeCurrency is DeployStage {
-    using Artifacts for Artifacts.Artifact;
+    using Sources for Sources.Source;
 
     error FaucetNotDeployed();
     error WETH9NotDeployed();
@@ -23,19 +23,9 @@ contract NativeCurrency is DeployStage {
 
     function setUp() public { }
 
-    function run() 
-        public 
-        withConfiguration(Kind.DEBUG) 
-        defineInjections2(
-            Artifacts.Artifact.WETH9, 
-            Artifacts.Artifact.Faucet
-        )
-    {
-        vm.startBroadcast();
-        weth9 = new WETH9{ salt: Artifacts.Artifact.WETH9.toSalt() }();
-        faucet = new Faucet{ salt: Artifacts.Artifact.Faucet.toSalt() }();
-        vm.stopBroadcast();
-
+    function run() public autowire(Sources.Source.WETH9) autowire(Sources.Source.Faucet) {
+        weth9 = WETH9(payable(autowired(Sources.Source.WETH9)));
+        faucet = Faucet(payable(autowired(Sources.Source.Faucet)));
         console.log("WETH9:", address(weth9));
         console.log("Faucet:", address(faucet));
     }

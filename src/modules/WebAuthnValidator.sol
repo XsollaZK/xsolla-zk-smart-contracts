@@ -15,7 +15,8 @@ import { IValidator, IModule, MODULE_TYPE_VALIDATOR } from "../interfaces/IERC75
 /// @title WebAuthnValidator
 /// @author Matter Labs
 /// @custom:security-contact security@matterlabs.dev
-/// @dev This contract allows secure user authentication using WebAuthn public keys.
+/// @dev This contract allows secure user authentication using WebAuthn public
+/// keys.
 contract WebAuthnValidator is IValidator {
     using JSONParserLib for JSONParserLib.Item;
     using JSONParserLib for string;
@@ -30,7 +31,8 @@ contract WebAuthnValidator is IValidator {
     error InvalidClientData(string field);
     error InvalidAuthDataFlags(bytes1 flags);
 
-    /// @notice Represents a passkey identifier, which includes the domain and credential ID
+    /// @notice Represents a passkey identifier, which includes the domain and
+    /// credential ID
     struct PasskeyId {
         string domain;
         bytes credentialId;
@@ -38,31 +40,36 @@ contract WebAuthnValidator is IValidator {
 
     /// @notice Emitted when a passkey is created
     /// @param keyOwner The address of the account that owns the passkey
-    /// @param originDomain The domain for which the passkey was created, typically an Auth Server
-    /// @param credentialId The unique identifier for the passkey
+    /// @param originDomain The domain for which the passkey was created,
+    /// typically an Auth Server @param credentialId The unique identifier for
+    /// the passkey
     event PasskeyCreated(address indexed keyOwner, string originDomain, bytes credentialId);
     /// @notice Emitted when a passkey is removed from the account
     /// @param keyOwner The address of the account that owned the passkey
     /// @param originDomain The domain for which the that passkey was used
-    /// @param credentialId The unique identifier for the passkey that was removed
+    /// @param credentialId The unique identifier for the passkey that was
+    /// removed
     event PasskeyRemoved(address indexed keyOwner, string originDomain, bytes credentialId);
 
     /// @dev Mapping of public keys to the account address that owns them
-    mapping(string originDomain => mapping(bytes credentialId => mapping(address account => bytes32[2] publicKey)))
-        private publicKeys;
+    mapping(
+        string originDomain => mapping(bytes credentialId => mapping(address account => bytes32[2] publicKey))
+    ) private publicKeys;
 
-    /// @dev Mapping of domain-bound credential IDs to the account address that owns them
+    /// @dev Mapping of domain-bound credential IDs to the account address that
+    /// owns them
     mapping(string originDomain => mapping(bytes credentialId => address accountAddress)) public registeredAddress;
 
-    /// @dev check for secure validation: bit 0 = 1 (user present), bit 2 = 1 (user verified)
+    /// @dev check for secure validation: bit 0 = 1 (user present), bit 2 = 1
+    /// (user verified)
     bytes1 private constant AUTH_DATA_MASK = 0x05;
     bytes32 private constant WEBAUTHN_GET_HASH = keccak256("webauthn.get");
     bytes32 private constant FALSE_HASH = keccak256("false");
 
-    /// @notice This is helper function that returns the whole public key, as of solidity 0.8.24 the
-    /// auto-generated getters only return half of the key
-    /// @param originDomain the domain this key is associated with (the auth-server)
-    /// @param credentialId the passkey unique identifier
+    /// @notice This is helper function that returns the whole public key, as of
+    /// solidity 0.8.24 the auto-generated getters only return half of the key
+    /// @param originDomain the domain this key is associated with (the
+    /// auth-server) @param credentialId the passkey unique identifier
     /// @param accountAddress the address of the account that owns the key
     /// @return publicKeys the public key
     function getAccountKey(string calldata originDomain, bytes calldata credentialId, address accountAddress)
@@ -74,7 +81,8 @@ contract WebAuthnValidator is IValidator {
     }
 
     /// @notice Runs on module install
-    /// @param data ABI-encoded WebAuthn passkey to add immediately, or empty if not needed
+    /// @param data ABI-encoded WebAuthn passkey to add immediately, or empty if
+    /// not needed
     function onInstall(bytes calldata data) external override {
         if (data.length > 0) {
             (bytes memory credentialId, bytes32[2] memory rawPublicKey, string memory originDomain) =
@@ -159,8 +167,8 @@ contract WebAuthnValidator is IValidator {
     }
 
     /// @notice Validates a transaction signed with a passkey
-    /// @dev Does not validate the transaction signature field, which is expected to be different
-    /// due to the modular format
+    /// @dev Does not validate the transaction signature field, which is
+    /// expected to be different due to the modular format
     /// @param signedHash The hash of the signed transaction
     /// @param userOp The user operation to validate
     /// @return 0 if the signature is valid, 1 if invalid, otherwise reverts
@@ -170,12 +178,14 @@ contract WebAuthnValidator is IValidator {
 
     /// @notice Validates a WebAuthn signature
     /// @dev Performs r & s range validation to prevent signature malleability
-    /// @dev Checks passkey authenticator data flags (valid number of credentials)
-    /// @dev Requires that the transaction signature hash was the signed challenge
+    /// @dev Checks passkey authenticator data flags (valid number of
+    /// credentials) @dev Requires that the transaction signature hash was the
+    /// signed challenge
     /// @dev Verifies that the signature was performed by a 'get' request
     /// @param signedHash The hash of the signed message
-    /// @param fatSignature The signature to validate (authenticator data, client data, [r, s], credential ID)
-    /// @return true if the signature is valid
+    /// @param fatSignature The signature to validate (authenticator data,
+    /// client data, [r, s], credential ID) @return true if the signature is
+    /// valid
     function webAuthVerify(bytes32 signedHash, bytes memory fatSignature) internal view returns (bool) {
         (
             bytes memory authenticatorData,
@@ -187,9 +197,11 @@ contract WebAuthnValidator is IValidator {
         // https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API/Authenticator_data#attestedcredentialdata
         require(authenticatorData[32] & AUTH_DATA_MASK == AUTH_DATA_MASK, InvalidAuthDataFlags(authenticatorData[32]));
 
-        // parse out the required fields (type, challenge, crossOrigin): https://goo.gl/yabPex
+        // parse out the required fields (type, challenge, crossOrigin):
+        // https://goo.gl/yabPex
         JSONParserLib.Item memory root = JSONParserLib.parse(clientDataJSON);
-        // challenge should contain the transaction hash, ensuring that the transaction is signed
+        // challenge should contain the transaction hash, ensuring that the
+        // transaction is signed
         string memory challenge = root.at('"challenge"').value().decodeString();
         bytes memory challengeData = Base64.decode(challenge);
         bool challengeValid = (challengeData.length == 32 && bytes32(challengeData) == signedHash);
@@ -199,16 +211,19 @@ contract WebAuthnValidator is IValidator {
         require(WEBAUTHN_GET_HASH == keccak256(bytes(webauthnType)), InvalidClientData("type"));
 
         // the origin determines which key to validate against
-        // as passkeys are linked to domains, so the storage mapping reflects that
+        // as passkeys are linked to domains, so the storage mapping reflects
+        // that
         string memory origin = root.at('"origin"').value().decodeString();
         bytes32[2] memory publicKey = publicKeys[origin][credentialId][msg.sender];
         // TODO this should probably not revert, but return false
-        // require(publicKey[0] != 0 || publicKey[1] != 0, KeyNotFound(origin, credentialId, msg.sender));
+        // require(publicKey[0] != 0 || publicKey[1] != 0, KeyNotFound(origin,
+        // credentialId, msg.sender));
 
         // cross-origin validation is optional, but explicitly not supported.
         // cross-origin requests would be from embedding the auth request
         // from another domain. The current SSO setup uses a pop-up instead of
-        // an i-frame, so we're rejecting these until the implemention supports it
+        // an i-frame, so we're rejecting these until the implemention supports
+        //it
         JSONParserLib.Item memory crossOriginItem = root.at('"crossOrigin"');
         if (!crossOriginItem.isUndefined()) {
             string memory crossOrigin = crossOriginItem.value();

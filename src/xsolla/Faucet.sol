@@ -42,8 +42,8 @@ contract Faucet is Ownable {
     constructor() Ownable(_msgSender()) { }
 
     /// @notice Allows users to claim ETH from the faucet
-    /// @dev Users must send exact portion amount and wait 24 hours between claims
-    /// @param destination The address that will receive the ETH
+    /// @dev Users must send exact portion amount and wait 24 hours between
+    /// claims @param destination The address that will receive the ETH
     function faucet(address destination) public payable {
         if (msg.value != portion) {
             revert InvalidPortionAmount();

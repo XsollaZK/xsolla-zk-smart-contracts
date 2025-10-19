@@ -149,8 +149,9 @@ contract BasicTest is MSATest {
 
     function test_signaturePersonalSign() public view {
         bytes memory message = "Hello, world!";
-        bytes32 messageHash =
-            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n", LibString.toString(message.length), message));
+        bytes32 messageHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n", LibString.toString(message.length), message)
+        );
 
         bytes32 finalHash = keccak256(
             abi.encodePacked(

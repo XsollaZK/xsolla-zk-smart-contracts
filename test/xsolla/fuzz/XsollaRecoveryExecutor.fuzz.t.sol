@@ -20,7 +20,8 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
 
     function setUp() public override {
         super.setUp();
-        // Deploy executor (constructor arg order: webAuth, eoa, admin, finalizer, submitter)
+        // Deploy executor (constructor arg order: webAuth, eoa, admin,
+        // finalizer, submitter)
         executor = new XsollaRecoveryExecutor(
             address(0),
             address(eoaValidator),
@@ -29,7 +30,8 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
             address(this) // submitter
         );
 
-        // Install executor module on the smart account (mirrors Guardian.t.sol style)
+        // Install executor module on the smart account (mirrors Guardian.t.sol
+        // style)
         bytes memory data =
             abi.encodeCall(ModularSmartAccount.installModule, (MODULE_TYPE_EXECUTOR, address(executor), ""));
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
@@ -37,20 +39,23 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
         entryPoint.handleOps(userOps, bundler);
     }
 
-    // Fuzz successful recovery path with synthesized local time adjustments (no on-chain offsets)
+    // Fuzz successful recovery path with synthesized local time adjustments (no
+    // on-chain offsets)
     function testFuzz_RecoverySuccess(int128 delayOffset, int128 validityOffset, uint64 warpExtra) public {
         uint256 baseDelay = executor.REQUEST_DELAY_TIME();
         uint256 baseValidity = executor.REQUEST_VALIDITY_TIME();
         vm.assume(baseValidity > baseDelay + 2);
 
-        // Derive a non-negative extra delay (cap 7 days) using safe abs (cast to int256 first to avoid overflow)
+        // Derive a non-negative extra delay (cap 7 days) using safe abs (cast
+        // to int256 first to avoid overflow)
         int256 d = int256(delayOffset);
         uint256 delayExtra = uint256(d < 0 ? -d : d) % 7 days;
         uint256 effDelay = baseDelay + delayExtra;
 
         // Ensure effDelay leaves room inside validity window; clamp if needed
         if (effDelay + 2 >= baseValidity) {
-            // If window too tight after adding extra, reduce to last valid start ensuring effDelay >= baseDelay
+            // If window too tight after adding extra, reduce to last valid
+            // start ensuring effDelay >= baseDelay
             if (baseValidity > baseDelay + 2) {
                 effDelay = baseValidity - 3;
                 if (effDelay < baseDelay) effDelay = baseDelay;
@@ -61,7 +66,8 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
         }
 
         // Derive warpExtra limited to stay strictly before validity end
-        uint256 maxWarpExtra = baseValidity - effDelay - 2; // need at least +1 to pass delay and < validity
+        uint256 maxWarpExtra = baseValidity - effDelay - 2; // need at least +1
+            // to pass delay and < validity
         if (maxWarpExtra > 0) {
             warpExtra = uint64(warpExtra % (maxWarpExtra + 1));
         } else {
@@ -78,7 +84,8 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
         vm.expectPartialRevert(GuardianExecutor_RecoverTimestampInvalid_selector());
         executor.finalizeRecovery(address(account));
 
-        // Warp into valid window: timestamp + effDelay + 1 (+ optional warpExtra)
+        // Warp into valid window: timestamp + effDelay + 1 (+ optional
+        // warpExtra)
         vm.warp(block.timestamp + effDelay + 1 + warpExtra);
 
         executor.finalizeRecovery(address(account));

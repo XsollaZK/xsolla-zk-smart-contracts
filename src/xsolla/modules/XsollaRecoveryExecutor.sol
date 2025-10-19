@@ -13,37 +13,45 @@ import { IERC7579Account } from "../../interfaces/IERC7579Account.sol";
 import { ModeLib, ModeCode } from "../../libraries/ModeLib.sol";
 
 /// @title XsollaRecoveryExecutor
-/// @notice GuardianExecutor variant with an implicit, globally trusted Xsolla guardian (no per‑account guardian
-/// setup).
-/// @dev Disables all mutable guardian management; only a privileged submit / finalize recovery flow is allowed.
-/// Recovery lifecycle:
-/// 1. initializeRecovery(): stores a pending request if none active (or previous expired).
-/// 2. finalizeRecovery(): callable only after REQUEST_DELAY_TIME has strictly passed
+/// @notice GuardianExecutor variant with an implicit, globally trusted Xsolla
+/// guardian (no per‑account guardian setup).
+/// @dev Disables all mutable guardian management; only a privileged submit /
+/// finalize recovery flow is allowed. Recovery lifecycle:
+/// 1. initializeRecovery(): stores a pending request if none active (or
+/// previous expired). 2. finalizeRecovery(): callable only after
+/// REQUEST_DELAY_TIME has strictly passed
 ///    and strictly before (timestamp + REQUEST_VALIDITY_TIME) expires.
 /// 3. discardRecovery()/discardRecoveryFor(): cancels an active request.
 /// A recovery is considered active if (timestamp != 0 && data.length != 0).
 contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
-    /// @notice Role allowed to submit (initialize) recovery requests acting as the implicit guardian.
-    /// @dev Holders can start or discard recoveries for any account.
+    /// @notice Role allowed to submit (initialize) recovery requests acting as
+    /// the implicit guardian. @dev Holders can start or discard recoveries for
+    /// any account.
     bytes32 public constant SUBMITTER_ROLE = keccak256("SUBMITTER_ROLE");
-    /// @notice Role allowed to finalize (execute) a pending recovery after the delay window.
-    /// @dev Separation of duties: submitter cannot finalize unless also granted this role.
+    /// @notice Role allowed to finalize (execute) a pending recovery after the
+    /// delay window. @dev Separation of duties: submitter cannot finalize
+    /// unless also granted this role.
     bytes32 public constant FINALIZER_ROLE = keccak256("FINALIZER_ROLE");
 
-    /// @notice Thrown when attempting to use disabled guardian management functions.
-    /// @custom:error GuardianModificationDisabled All guardian mutation entrypoints revert with this error.
+    /// @notice Thrown when attempting to use disabled guardian management
+    /// functions. @custom:error GuardianModificationDisabled All guardian
+    /// mutation entrypoints revert with this error.
     error GuardianModificationDisabled();
 
-    /// @notice Thrown when trying to discard a recovery that does not exist for the target account.
-    /// @param account The account for which no active recovery exists.
+    /// @notice Thrown when trying to discard a recovery that does not exist for
+    /// the target account. @param account The account for which no active
+    /// recovery exists.
     error CannotDiscardRecoveryFor(address account);
 
     /// @notice Deploys the executor and assigns role addresses.
-    /// @param _webAuthValidator Address of the installed WebAuthn (passkey) validator.
-    /// @param _eoaValidator Address of the installed EOA key validator.
-    /// @param _admin Address granted DEFAULT_ADMIN_ROLE (can grant/revoke other roles).
-    /// @param _finalizer Address granted FINALIZER_ROLE (may finalize recoveries).
-    /// @param _submitter Address granted SUBMITTER_ROLE (may initialize/discard recoveries).
+    /// @param _webAuthValidator Address of the installed WebAuthn (passkey)
+    /// validator. @param _eoaValidator Address of the installed EOA key
+    /// validator.
+    /// @param _admin Address granted DEFAULT_ADMIN_ROLE (can grant/revoke other
+    /// roles). @param _finalizer Address granted FINALIZER_ROLE (may finalize
+    /// recoveries).
+    /// @param _submitter Address granted SUBMITTER_ROLE (may initialize/discard
+    /// recoveries).
     constructor(
         address _webAuthValidator,
         address _eoaValidator,
@@ -56,10 +64,11 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         _grantRole(SUBMITTER_ROLE, _submitter);
     }
 
-    /// @notice Initializes a recovery request for a smart account (implicit global guardian).
-    /// @dev Requirements:
-    /// - Corresponding validator for recoveryType must be installed (checkInstalledValidator).
-    /// - No active (non‑expired) recovery in progress (else RecoveryInProgress).
+    /// @notice Initializes a recovery request for a smart account (implicit
+    /// global guardian). @dev Requirements:
+    /// - Corresponding validator for recoveryType must be installed
+    /// (checkInstalledValidator). - No active (non‑expired) recovery in
+    /// progress (else RecoveryInProgress).
     /// Behavior:
     /// - If a previous recovery exists but has expired, it is discarded first.
     /// - Records timestamp = current block time.
@@ -72,7 +81,8 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         override
         onlyRole(SUBMITTER_ROLE)
     {
-        // Implicit guardian path: replicate the base logic without the onlyGuardianOf modifier.
+        // Implicit guardian path: replicate the base logic without the
+        // onlyGuardianOf modifier.
         checkInstalledValidator(accountToRecover, recoveryType);
         uint256 pendingRecoveryTimestamp = pendingRecovery[accountToRecover].timestamp;
         if (pendingRecoveryTimestamp != 0 && pendingRecoveryTimestamp + REQUEST_VALIDITY_TIME >= block.timestamp) {
@@ -85,12 +95,13 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         emit RecoveryInitiated(accountToRecover, msg.sender, recovery);
     }
 
-    /// @notice Finalizes an initialized recovery after delay and before expiry, executing the validator action.
-    /// @dev Requirements:
+    /// @notice Finalizes an initialized recovery after delay and before expiry,
+    /// executing the validator action. @dev Requirements:
     /// - Active recovery must exist (else NoRecoveryInProgress).
     /// - Validator for stored recovery type still installed.
-    /// - Timing: (timestamp + REQUEST_DELAY_TIME) < block.timestamp (strictly after delay) AND
-    ///            block.timestamp < (timestamp + REQUEST_VALIDITY_TIME) (strictly before expiry).
+    /// - Timing: (timestamp + REQUEST_DELAY_TIME) < block.timestamp (strictly
+    /// after delay) AND block.timestamp < (timestamp + REQUEST_VALIDITY_TIME)
+    /// (strictly before expiry).
     /// Side effects:
     /// - Deletes pending recovery before external call.
     /// - Executes validator-specific addOwner / addValidationKey via account.
@@ -115,8 +126,9 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
             revert RecoveryTimestampInvalid(recovery.timestamp);
         }
 
-        // NOTE: the fact that recovery type is not `None` is checked in `checkInstalledValidator`.
-        // slither-disable-next-line incorrect-equality
+        // NOTE: the fact that recovery type is not `None` is checked in
+        // `checkInstalledValidator`. slither-disable-next-line
+        // incorrect-equality
         address validator = recovery.recoveryType == RecoveryType.EOA ? eoaValidator : webAuthValidator;
         // slither-disable-next-line incorrect-equality
         bytes4 selector = recovery.recoveryType == RecoveryType.EOA
@@ -136,15 +148,17 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
         _discardRecoveryFor(msg.sender, true);
     }
 
-    /// @notice Discards a pending recovery for a target account (submitter authority).
-    /// @dev Reverts with CannotDiscardRecoveryFor if no active recovery for account.
+    /// @notice Discards a pending recovery for a target account (submitter
+    /// authority). @dev Reverts with CannotDiscardRecoveryFor if no active
+    /// recovery for account.
     /// @param account Target account whose recovery is to be discarded.
     function discardRecoveryFor(address account) external virtual onlyRole(SUBMITTER_ROLE) {
         _discardRecoveryFor(account, true);
     }
 
-    /// @notice Prevents removal of all past guardians when this module is disabled in an account, since they are not utilized.
-    function onUninstall(bytes calldata) external override virtual {}
+    /// @notice Prevents removal of all past guardians when this module is
+    /// disabled in an account, since they are not utilized.
+    function onUninstall(bytes calldata) external virtual override { }
 
     // ---------------------------------------------------------------------
     // Disabled guardian management (only implicit xsolla guardian is allowed).

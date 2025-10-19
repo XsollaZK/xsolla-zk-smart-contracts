@@ -97,7 +97,8 @@ contract ExecutionHelper {
         }
     }
 
-    /// @dev Execute a delegatecall with `delegate` on this account and catch reverts.
+    /// @dev Execute a delegatecall with `delegate` on this account and catch
+    /// reverts.
     function _tryExecuteDelegatecall(address delegate, bytes calldata callData)
         internal
         returns (bool success, bytes memory result)
@@ -124,9 +125,13 @@ contract ExecutionHelper {
             // destructure executionCallData according to batched exec
             bytes32[] calldata executions = LibERC7579.decodeBatch(data);
             // check if execType is revert or try
-            if (execType == LibERC7579.EXECTYPE_DEFAULT) returnData = _execute(executions);
-            else if (execType == LibERC7579.EXECTYPE_TRY) returnData = _tryExecute(executions);
-            else revert UnsupportedExecType(execType);
+            if (execType == LibERC7579.EXECTYPE_DEFAULT) {
+                returnData = _execute(executions);
+            } else if (execType == LibERC7579.EXECTYPE_TRY) {
+                returnData = _tryExecute(executions);
+            } else {
+                revert UnsupportedExecType(execType);
+            }
         } else if (callType == LibERC7579.CALLTYPE_SINGLE) {
             // destructure executionCallData according to single exec
             (address target, uint256 value, bytes calldata callData) = LibERC7579.decodeSingle(data);

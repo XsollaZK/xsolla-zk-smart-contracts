@@ -8,7 +8,8 @@ import { ERC721Modular } from "./extensions/ERC721Modular.sol";
 /// @title ERC721Claimer
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
 /// @notice Allows users to claim a fixed amount of ERC721 tokens once.
-/// @dev Only the owner can set the claim amount. Be mindful of gas limits for large claim amounts.
+/// @dev Only the owner can set the claim amount. Be mindful of gas limits for
+/// large claim amounts.
 contract ERC721Claimer is Ownable {
     /// @notice Tracks whether an address has already claimed tokens.
     mapping(address claimer => bool claimedStatus) public isClaimed;
@@ -45,8 +46,8 @@ contract ERC721Claimer is Ownable {
     }
 
     /// @notice Sets the amount of tokens that can be claimed per user.
-    /// @dev Only callable by the contract owner. Consider gas limits for large amounts.
-    /// @param _amountToClaim The new claim amount.
+    /// @dev Only callable by the contract owner. Consider gas limits for large
+    /// amounts. @param _amountToClaim The new claim amount.
     function setAmountToClaim(uint256 _amountToClaim) external onlyOwner {
         if (_amountToClaim == 0) {
             revert InvalidClaimAmount();

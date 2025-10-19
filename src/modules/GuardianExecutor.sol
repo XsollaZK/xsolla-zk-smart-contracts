@@ -57,8 +57,9 @@ contract GuardianExecutor is IExecutor {
     mapping(address account => EnumerableMap.AddressToUintMap guardians) private accountGuardians;
     mapping(address account => RecoveryRequest recoveryData) public pendingRecovery;
 
-    /// @notice This modifier allows execution only by active guardian of account
-    /// @param account Address of account for which we verify guardian existence
+    /// @notice This modifier allows execution only by active guardian of
+    /// account @param account Address of account for which we verify guardian
+    /// existence
     modifier onlyGuardianOf(address account) {
         (bool exists, uint256 guardianData) = accountGuardians[account].tryGet(msg.sender);
         require(exists, GuardianNotFound(account, msg.sender));
@@ -79,7 +80,8 @@ contract GuardianExecutor is IExecutor {
     /// but ensures that the WebAuthValidator is enabled for calling SsoAccount.
     function onInstall(bytes calldata) external view virtual { }
 
-    /// @notice Removes all past guardians when this module is disabled in a account
+    /// @notice Removes all past guardians when this module is disabled in a
+    /// account
     function onUninstall(bytes calldata) external virtual {
         accountGuardians[msg.sender].clear();
         discardRecovery();
@@ -105,8 +107,9 @@ contract GuardianExecutor is IExecutor {
         accountGuardians[msg.sender].remove(guardianToRemove);
 
         if (wasActive) {
-            // In case an ongoing recovery was started by this guardian, discard it to prevent a potential
-            // account overtake by a second malicious guardian.
+            // In case an ongoing recovery was started by this guardian, discard
+            // it to prevent a potential account overtake by a second malicious
+            // guardian.
             discardRecovery();
         }
 
@@ -179,8 +182,9 @@ contract GuardianExecutor is IExecutor {
             RecoveryTimestampInvalid(recovery.timestamp)
         );
 
-        // NOTE: the fact that recovery type is not `None` is checked in `checkInstalledValidator`.
-        // slither-disable-next-line incorrect-equality
+        // NOTE: the fact that recovery type is not `None` is checked in
+        // `checkInstalledValidator`. slither-disable-next-line
+        // incorrect-equality
         address validator = recovery.recoveryType == RecoveryType.EOA ? eoaValidator : webAuthValidator;
         // slither-disable-next-line incorrect-equality
         bytes4 selector = recovery.recoveryType == RecoveryType.EOA

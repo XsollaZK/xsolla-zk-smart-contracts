@@ -26,8 +26,8 @@ contract SessionKeyValidator is IValidator {
     /// @notice Get the session state for an account
     /// @param account The account to fetch the session state for
     /// @param spec The session specification to get the state of
-    /// @return The session state: status, remaining fee limit, transfer limits, call value and call
-    /// parameter limits
+    /// @return The session state: status, remaining fee limit, transfer limits,
+    /// call value and call parameter limits
     function sessionState(address account, SessionLib.SessionSpec calldata spec)
         external
         view
@@ -46,8 +46,8 @@ contract SessionKeyValidator is IValidator {
     }
 
     /// @notice Runs on module install
-    /// @param data ABI-encoded session specification to immediately create a session, or empty if
-    /// not needed
+    /// @param data ABI-encoded session specification to immediately create a
+    /// session, or empty if not needed
     function onInstall(bytes calldata data) external virtual {
         if (data.length > 0) {
             // This always either succeeds with `true` or reverts within,
@@ -61,8 +61,9 @@ contract SessionKeyValidator is IValidator {
     /// @param data ABI-encoded array of session hashes to revoke
     /// @dev Revokes provided sessions before uninstalling,
     /// reverts if any session is still active after that.
-    /// @notice Only provided sessions will be revoked, not necessarily all active sessions.
-    /// If any active session is unrevoked on uninstall, it will become active again
+    /// @notice Only provided sessions will be revoked, not necessarily all
+    /// active sessions. If any active session is unrevoked on uninstall, it
+    /// will become active again
     /// if the module is reinstalled, unless the session expires.
     function onUninstall(bytes calldata data) external virtual {
         // Revoke keys before uninstalling
@@ -72,8 +73,9 @@ contract SessionKeyValidator is IValidator {
         }
     }
 
-    /// @notice This module should not be used to validate signatures (including EIP-1271),
-    /// as a signature by itself does not have enough information to validate it against a session.
+    /// @notice This module should not be used to validate signatures (including
+    /// EIP-1271), as a signature by itself does not have enough information to
+    /// validate it against a session.
     function isValidSignatureWithSender(address, bytes32, bytes calldata) external pure returns (bytes4) {
         return 0xffffffff;
     }
@@ -100,14 +102,16 @@ contract SessionKeyValidator is IValidator {
 
     /// @notice Create a new session for an account
     /// @param sessionSpec The session specification to create a session with
-    /// @dev In the sessionSpec, callPolicies should not have duplicated instances of (target, selector) pairs.
-    /// Only the first one of the duplicates is considered when validating transactions.
+    /// @dev In the sessionSpec, callPolicies should not have duplicated
+    /// instances of (target, selector) pairs. Only the first one of the
+    /// duplicates is considered when validating transactions.
     function createSession(SessionLib.SessionSpec memory sessionSpec) public virtual {
         require(isInitialized(msg.sender), NotInitialized(msg.sender));
         _createSession(sessionSpec);
     }
 
-    /// @notice Same as `createSession`, but does not check if the validator is initialized for the account.
+    /// @notice Same as `createSession`, but does not check if the validator is
+    /// initialized for the account.
     function _createSession(SessionLib.SessionSpec memory sessionSpec) internal virtual {
         bytes32 sessionHash = keccak256(abi.encode(sessionSpec));
 
@@ -185,7 +189,8 @@ contract SessionKeyValidator is IValidator {
         if (err != ECDSA.RecoverError.NoError || signer == address(0) || signer != spec.signer) {
             return SIG_VALIDATION_FAILED;
         }
-        // This check is separate and performed last to prevent gas estimation failures
+        // This check is separate and performed last to prevent gas estimation
+        // failures
         (uint48 newValidAfter, uint48 newValidUntil) =
             sessions[sessionHash].validateFeeLimit(userOp, spec, periodIds[0]);
         validAfter = newValidAfter > validAfter ? validAfter : newValidAfter;

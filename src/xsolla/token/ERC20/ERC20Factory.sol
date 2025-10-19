@@ -7,7 +7,8 @@ import { ERC20Modular } from "./extensions/ERC20Modular.sol";
 
 /// @title ERC20Factory
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice A factory contract for deploying ERC20Modular tokens with role-based access control.
+/// @notice A factory contract for deploying ERC20Modular tokens with role-based
+/// access control.
 contract ERC20Factory is Ownable {
     /// @notice Emitted when a new ERC20 token is deployed.
     /// @param newTokenAddress The address of the newly deployed ERC20 token.

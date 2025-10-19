@@ -43,8 +43,9 @@ contract GuardianTest is MSATest {
 
     function test_uninstallExecutor() public {
         test_installExecutor();
-        bytes memory data =
-            abi.encodeCall(ModularSmartAccount.uninstallModule, (MODULE_TYPE_EXECUTOR, address(guardiansExecutor), ""));
+        bytes memory data = abi.encodeCall(
+            ModularSmartAccount.uninstallModule, (MODULE_TYPE_EXECUTOR, address(guardiansExecutor), "")
+        );
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = makeSignedUserOp(data, owner.key, address(eoaValidator));
         vm.expectEmit(true, true, true, true);

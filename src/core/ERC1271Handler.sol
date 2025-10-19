@@ -18,14 +18,16 @@ abstract contract ERC1271Handler is ERC1271, ModuleManager {
         return ("zksync-sso-1271", "1.0.0");
     }
 
-    /// @notice Indicates whether or not the contract may cache the domain name and version.
-    /// @return bool - Whether the domain name and version may change.
+    /// @notice Indicates whether or not the contract may cache the domain name
+    /// and version. @return bool - Whether the domain name and version may
+    /// change.
     function _domainNameAndVersionMayChange() internal pure override returns (bool) {
         return true;
     }
 
-    /// @notice Returns whether the signature provided is valid for the provided hash.
-    /// @dev Does not run validation hooks. Is used internally after ERC7739 unwrapping.
+    /// @notice Returns whether the signature provided is valid for the provided
+    /// hash. @dev Does not run validation hooks. Is used internally after
+    /// ERC7739 unwrapping.
     /// @param hash bytes32 - Hash of the data that is signed
     /// @param data bytes calldata - validator address concatenated to signature
     /// @return bool - Whether the signature is valid
@@ -44,7 +46,8 @@ abstract contract ERC1271Handler is ERC1271, ModuleManager {
             == IERC1271.isValidSignature.selector;
     }
 
-    /// @notice This function is not used anywhere in the contract, but is required to be implemented.
+    /// @notice This function is not used anywhere in the contract, but is
+    /// required to be implemented.
     function _erc1271Signer() internal pure override returns (address) {
         revert();
     }

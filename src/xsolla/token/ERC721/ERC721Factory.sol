@@ -9,10 +9,12 @@ import { SVGIconsLib } from "../../libraries/SVGIconsLib.sol";
 
 /// @title ERC721Factory
 /// @author Oleg Bedrin <o.bedrin@xsolla.com> - Xsolla Web3
-/// @notice A factory contract for deploying ERC721 collections with default or custom configurations.
+/// @notice A factory contract for deploying ERC721 collections with default or
+/// custom configurations.
 contract ERC721Factory is Ownable {
     /// @notice Emitted when a new collection is deployed.
-    /// @param newCollectionAddress The address of the newly deployed collection.
+    /// @param newCollectionAddress The address of the newly deployed
+    /// collection.
     event NewCollectionDeployed(address indexed newCollectionAddress);
 
     /// @notice The default maximum supply for collections.

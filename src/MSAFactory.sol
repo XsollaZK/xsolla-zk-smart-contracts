@@ -11,10 +11,12 @@ import { IMSA } from "./interfaces/IMSA.sol";
 /// @custom:security-contact security@matterlabs.dev
 /// @dev This contract is used to deploy SSO accounts as beacon proxies.
 contract MSAFactory is ReentrancyGuard {
-    /// @dev The address of the beacon contract used for the accounts' beacon proxies.
+    /// @dev The address of the beacon contract used for the accounts' beacon
+    /// proxies.
     address public immutable beacon;
 
-    /// @notice A mapping from unique account IDs to their corresponding deployed account addresses.
+    /// @notice A mapping from unique account IDs to their corresponding
+    /// deployed account addresses.
     mapping(bytes32 accountId => address deployedAccount) public accountRegistry;
 
     /// @notice Emitted when a new account is successfully created.

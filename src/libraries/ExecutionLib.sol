@@ -11,7 +11,8 @@ library ExecutionLib {
     error ERC7579DecodingError();
 
     /**
-     * @notice Decode a batch of `Execution` executionBatch from a `bytes` calldata.
+     * @notice Decode a batch of `Execution` executionBatch from a `bytes`
+     * calldata.
      * @dev code is copied from solady's LibERC7579.sol
      * https://github.com/Vectorized/solady/blob/740812cedc9a1fc11e17cb3d4569744367dedf19/src/accounts/LibERC7579.sol#L146
      *      Credits to Vectorized and the Solady Team
@@ -30,7 +31,8 @@ library ExecutionLib {
             }
             if executionBatch.length {
                 // Perform bounds checks on the decoded `executionBatch`.
-                // Loop runs out-of-gas if `executionBatch.length` is big enough to cause overflows.
+                // Loop runs out-of-gas if `executionBatch.length` is big enough
+                // to cause overflows.
                 for { let i := executionBatch.length } 1 { } {
                     i := sub(i, 1)
                     let p := calldataload(add(executionBatch.offset, shl(5, i)))

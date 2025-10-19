@@ -129,7 +129,8 @@ contract ERC20ClaimerFuzzTest is Test {
 
     /// @notice Fuzz test for multiple users claiming
     function testFuzz_MultipleClaims(address[] memory claimants) public {
-        vm.assume(claimants.length > 0 && claimants.length <= 10); // Reasonable batch size
+        vm.assume(claimants.length > 0 && claimants.length <= 10); // Reasonable
+            // batch size
 
         uint256 claimAmount = claimer.amountToClaim();
         uint256 totalClaimed = 0;
