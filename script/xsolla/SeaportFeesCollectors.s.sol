@@ -6,11 +6,11 @@ import { console } from "forge-std/console.sol";
 import { BaseFeeCollector } from "src/xsolla/collector/BaseFeeCollector.sol";
 import { EthereumFeeCollector } from "src/xsolla/collector/EthereumFeeCollector.sol";
 
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
 /// @title SeaportFeesCollectors Deployment Script
 /// @notice Minimal deployment for BaseFeeCollector and EthereumFeeCollector
-contract SeaportFeesCollectors is DeployStage {
+contract SeaportFeesCollectors is Autowirable {
     error BaseFeeCollectorNotDeployed();
     error EthereumFeeCollectorNotDeployed();
     error InvalidCollectorType();

@@ -8,9 +8,9 @@ import { ERC721Modular } from "src/xsolla/token/ERC721/extensions/ERC721Modular.
 import { ERC721Claimer } from "src/xsolla/token/ERC721/ERC721Claimer.sol";
 import { SVGIconsLib } from "src/xsolla/libraries/SVGIconsLib.sol";
 
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
-contract EIP721 is DeployStage {
+contract EIP721 is Autowirable {
     error ERC721ModularNotDeployed();
 
     ERC721Factory public erc721Factory;

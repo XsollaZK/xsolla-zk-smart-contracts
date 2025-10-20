@@ -1,51 +1,77 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+
+import {
+    StdConfigBasedEip4337FactoryConfiguration
+} from "xsolla/scripts/di/configurations/StdConfigBasedEip4337FactoryConfiguration.s.sol";
+import {
+    StdConfigBasedGuardianExecutorConfiguration
+} from "xsolla/scripts/di/configurations/StdConfigBasedGuardianExecutorConfiguration.s.sol";
+import {
+    StdConfigBasedXsollaRecoveryExecutorConfiguration
+} from "xsolla/scripts/di/configurations/StdConfigBasedXsollaRecoveryExecutorConfiguration.s.sol";
+
 import { console } from "forge-std/console.sol";
 
-import { MSAFactory } from "src/MSAFactory.sol";
-import { EOAKeyValidator } from "src/modules/EOAKeyValidator.sol";
-import { SessionKeyValidator } from "src/modules/SessionKeyValidator.sol";
-import { WebAuthnValidator } from "src/modules/WebAuthnValidator.sol";
-import { GuardianExecutor } from "src/modules/GuardianExecutor.sol";
-import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
+import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+contract SSO is Autowirable {
+    using ShortStrings for ShortString;
+    using Sources for Sources.Source;
 
-contract SSO is DeployStage {
-    function deployFactory() public returns (address factory, address[] memory defaultModules) {
-        // vm.startBroadcast();
+    string public constant ALICE_SMART_ACC = "Alice";
 
-        // defaultModules = new address[](4);
-        // defaultModules[0] = _makeTUP(address(new EOAKeyValidator()));
-        // defaultModules[1] = _makeTUP(address(new SessionKeyValidator()));
-        // defaultModules[2] = _makeTUP(address(new WebAuthnValidator()));
-        // defaultModules[3] = _makeTUP(address(new
-        // GuardianExecutor(defaultModules[2], defaultModules[0])));
+    StdConfigBasedEip4337FactoryConfiguration private eip4337FactoryConfig;
+    StdConfigBasedGuardianExecutorConfiguration private guardianExecutorConfig;
+    StdConfigBasedXsollaRecoveryExecutorConfiguration private xsollaRecoveryConfig;
 
-        // address accountImpl = address(new ModularSmartAccount());
-        // address beacon = address(new UpgradeableBeacon(accountImpl,
-        // msg.sender));
-        // factory = _makeTUP(address(new MSAFactory(beacon)));
-
-        // vm.stopBroadcast();
-
-        // console.log("EOAKeyValidator:", defaultModules[0]);
-        // console.log("SessionKeyValidator:", defaultModules[1]);
-        // console.log("WebAuthnValidator:", defaultModules[2]);
-        // console.log("GuardianExecutor:", defaultModules[3]);
-        // console.log("ModularSmartAccount implementation:", accountImpl);
-        // console.log("UpgradeableBeacon:", beacon);
-        // console.log("MSAFactory:", factory);
+    function deployFactory()
+        public
+        proxywire(Sources.Source.EOAKeyValidator)
+        proxywire(Sources.Source.SessionKeyValidator)
+        proxywire(Sources.Source.WebAuthnValidator)
+        configwire(guardianExecutorConfig)
+        configwire(xsollaRecoveryConfig)
+        configwire(eip4337FactoryConfig)
+        accountwire(ALICE_SMART_ACC)
+    {
+        console.log(
+            "EOAKeyValidator:",
+            autowired(Sources.Source.TransparentUpgradeableProxy, Sources.Source.EOAKeyValidator.toString())
+        );
+        console.log(
+            "SessionKeyValidator:",
+            autowired(Sources.Source.TransparentUpgradeableProxy, Sources.Source.SessionKeyValidator.toString())
+        );
+        console.log(
+            "WebAuthnValidator:",
+            autowired(Sources.Source.TransparentUpgradeableProxy, Sources.Source.WebAuthnValidator.toString())
+        );
+        console.log(
+            "GuardianExecutor:",
+            autowired(Sources.Source.TransparentUpgradeableProxy, Sources.Source.GuardianExecutor.toString())
+        );
+        console.log("UpgradeableBeacon:", autowired(Sources.Source.UpgradeableBeacon));
+        console.log(
+            "MSAFactory:", autowired(Sources.Source.TransparentUpgradeableProxy, Sources.Source.MSAFactory.toString())
+        );
+        console.log(
+            "ModularSmartAccount implementation:", autowired(Sources.Source.ModularSmartAccount, ALICE_SMART_ACC)
+        );
     }
 
-    function setUp() public { }
+    function setUp() public {
+        eip4337FactoryConfig = new StdConfigBasedEip4337FactoryConfiguration(vm, wiringMechanism, msg.sender);
+        guardianExecutorConfig = new StdConfigBasedGuardianExecutorConfiguration(vm, wiringMechanism, msg.sender);
+        xsollaRecoveryConfig = new StdConfigBasedXsollaRecoveryExecutorConfiguration(
+            vm, wiringMechanism, msg.sender, msg.sender, msg.sender
+        );
+    }
 
     function run() public {
-        // (address factoryAddr, address[] memory modules) = deployFactory();
-        // _deployAccount(factoryAddr, modules,
-        // keccak256(abi.encodePacked(block.timestamp)), 0);
+        deployFactory();
     }
 }

@@ -7,9 +7,9 @@ import { ERC1155Factory } from "src/xsolla/token/ERC1155/ERC1155Factory.sol";
 import { ERC1155Modular } from "src/xsolla/token/ERC1155/extensions/ERC1155Modular.sol";
 import { ERC1155Claimer } from "src/xsolla/token/ERC1155/ERC1155Claimer.sol";
 
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
-contract EIP1155 is DeployStage {
+contract EIP1155 is Autowirable {
     error ERC1155ModularNotDeployed();
 
     ERC1155Factory public erc1155Factory;

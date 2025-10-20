@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+import { Vm } from "forge-std/Vm.sol";
 import { StdConfig } from "forge-std/StdConfig.sol";
 
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
@@ -16,9 +17,17 @@ contract StdConfigBasedTUPConfiguration is IConfiguration {
     address private implementation;
     address private proxyOwner;
     StdConfig private config;
+    Vm private vm;
     Sources.Source private implementationSource;
 
-    constructor(StdConfig _config, address _proxyOwner, address _implementation, Sources.Source _implementationSource) {
+    constructor(
+        Vm _vm,
+        StdConfig _config,
+        address _proxyOwner,
+        address _implementation,
+        Sources.Source _implementationSource
+    ) {
+        vm = _vm;
         implementation = _implementation;
         config = _config;
         proxyOwner = _proxyOwner;
@@ -30,11 +39,12 @@ contract StdConfigBasedTUPConfiguration is IConfiguration {
     }
 
     function startAutowiringSources() external override {
+        vm.broadcast();
         address proxy = address(new TransparentUpgradeableProxy(implementation, proxyOwner, ""));
-        config.set(getImplSourceKey(), proxy);
+        config.set(getProxySourceKey(), proxy);
     }
 
-    function getImplSourceKey() public view returns (string memory) {
+    function getProxySourceKey() public view returns (string memory) {
         return Sources.Source.TransparentUpgradeableProxy
             .getFullNicknamedName(ShortStrings.toShortString(implementationSource.toString()));
     }

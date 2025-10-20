@@ -6,14 +6,18 @@ import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortSt
 
 import { Variable, TypeKind, LibVariable } from "forge-std/LibVariable.sol";
 import { Config } from "forge-std/Config.sol";
+import { StdConfig } from "forge-std/StdConfig.sol";
 import { console } from "forge-std/console.sol";
 
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IWiringMechanism } from "xsolla/scripts/di/interfaces/IWiringMechanism.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
-import { StdConfigBasedTUPConfiguration } from "xsolla/scripts/di/StdConfigBasedTUPConfiguration.s.sol";
+import {
+    StdConfigBasedEip4337Configuration
+} from "xsolla/scripts/di/configurations/StdConfigBasedEip4337Configuration.s.sol";
+import { StdConfigBasedTUPConfiguration } from "xsolla/scripts/di/configurations/StdConfigBasedTUPConfiguration.s.sol";
 
-abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
+contract StdConfigBasedWiring is IWiringMechanism, Config {
     using Sources for Sources.Source;
     using ShortStrings for ShortString;
 
@@ -33,6 +37,10 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
 
     constructor() {
         withConfiguration(Kind.DEBUG);
+    }
+
+    function getConfig() external view returns (StdConfig) {
+        return config;
     }
 
     function withMultiChainConfiguration(Kind configuration) public {
@@ -60,7 +68,7 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
             revert ChooseConfigurationFirst();
         }
         if (wiringType == SupportedWiring.PLAIN) {
-            Sources.Source source = Sources.Source(abi.decode(wiringInfo, (uint256)));
+            Sources.Source source = abi.decode(wiringInfo, (Sources.Source));
             address wiredAddress = Create2.deploy(0, source.toSalt(), source.toCreationCode());
             config.set(source.toString(), wiredAddress);
             return wiredAddress;
@@ -70,23 +78,52 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
             config.set(source.getFullNicknamedName(nickname), wiredAddress);
             return wiredAddress;
         } else if (wiringType == SupportedWiring.CONFIGURATION_BASED) {
-            if (wiringInfo.length > 20) {
-                (bytes32 proxyFlag, bytes memory deployerAndRestOfInfo) = abi.decode(wiringInfo, (bytes32, bytes));
-                if (proxyFlag != Sources.NICKNAMED_PROXY_FLAG) {
+            // If payload contains at least a bytes32 flag and a dynamic bytes header, treat as flagged std
+            // configuration
+            if (wiringInfo.length >= 64) {
+                (bytes32 stdConfigurationFlag, bytes memory deployerAndRestOfInfo) =
+                    abi.decode(wiringInfo, (bytes32, bytes));
+                if (stdConfigurationFlag == Sources.NICKNAMED_PROXY_FLAG) {
+                    (address deployerAddress, bytes memory restOfInfo) =
+                        abi.decode(deployerAndRestOfInfo, (address, bytes));
+                    if (deployerAddress == address(0)) {
+                        revert UnsupportedWiringType();
+                    }
+                    Sources.Source source = abi.decode(restOfInfo, (Sources.Source));
+                    // Ensure implementation deployment is broadcasted, so the proxy constructor sees code at _logic
+                    vm.broadcast();
+                    address implAddress = Create2.deploy(0, source.toSalt(), source.toCreationCode());
+                    // Save the implementation under the plain source key for consumers expecting the module logic
+                    // address
+                    config.set(source.toString(), implAddress);
+                    StdConfigBasedTUPConfiguration tupConfig =
+                        new StdConfigBasedTUPConfiguration(vm, config, deployerAddress, implAddress, source);
+                    tupConfig.startAutowiringSources();
+                    return config.get(tupConfig.getProxySourceKey()).toAddress();
+                } else if (stdConfigurationFlag == Sources.EIP4337_FLAG) {
+                    (address ownerAddress, bytes memory restOfInfo) =
+                        abi.decode(deployerAndRestOfInfo, (address, bytes));
+                    if (ownerAddress == address(0)) {
+                        revert UnsupportedWiringType();
+                    }
+                    ShortString nickname = ShortStrings.toShortString(abi.decode(restOfInfo, (string)));
+                    StdConfigBasedEip4337Configuration eip4337Config =
+                        new StdConfigBasedEip4337Configuration(vm, config, ownerAddress, nickname);
+                    eip4337Config.startAutowiringSources();
+                    return config.get(eip4337Config.getAccountSourceKey()).toAddress();
+                } else {
                     revert UnsupportedWiringType();
                 }
-                (address deployerAddress, bytes memory restOfInfo) = abi.decode(deployerAndRestOfInfo, (address, bytes));
-                if (deployerAddress == address(0)) {
-                    revert UnsupportedWiringType();
-                }
-                Sources.Source source = Sources.Source(abi.decode(restOfInfo, (uint256)));
-                address implAddress = Create2.deploy(0, source.toSalt(), source.toCreationCode());
-                StdConfigBasedTUPConfiguration tupConfig =
-                    new StdConfigBasedTUPConfiguration(config, deployerAddress, implAddress, source);
-                tupConfig.startAutowiringSources();
-                return config.get(tupConfig.getImplSourceKey()).toAddress();
             } else {
-                (address configuration) = abi.decode(wiringInfo, (address));
+                // Support both ABI-encoded (32 bytes) and packed (20 bytes) address encodings
+                address configuration;
+                if (wiringInfo.length == 32) {
+                    (configuration) = abi.decode(wiringInfo, (address));
+                } else if (wiringInfo.length == 20) {
+                    configuration = address(bytes20(wiringInfo));
+                } else {
+                    revert UnsupportedWiringType();
+                }
                 IConfiguration configContract = IConfiguration(configuration);
                 configContract.startAutowiringSources();
                 return address(0);
@@ -108,7 +145,7 @@ abstract contract StdConfigBasedWiring is IWiringMechanism, Config {
         }
         result = new address[](1);
         if (wiringType == SupportedWiring.PLAIN) {
-            Sources.Source source = Sources.Source(abi.decode(wiringInfo, (uint256)));
+            Sources.Source source = abi.decode(wiringInfo, (Sources.Source));
             result[0] = config.get(source.toString()).toAddress();
         } else if (wiringType == SupportedWiring.PLAIN_NICKNAMED) {
             (Sources.Source source, ShortString nickname) = abi.decode(wiringInfo, (Sources.Source, ShortString));

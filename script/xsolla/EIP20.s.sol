@@ -7,9 +7,9 @@ import { ERC20Factory } from "src/xsolla/token/ERC20/ERC20Factory.sol";
 import { ERC20Modular } from "src/xsolla/token/ERC20/extensions/ERC20Modular.sol";
 import { ERC20Claimer } from "src/xsolla/token/ERC20/ERC20Claimer.sol";
 
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
-contract EIP20 is DeployStage {
+contract EIP20 is Autowirable {
     error ERC20ModularNotDeployed();
 
     ERC20Factory public erc20Factory;

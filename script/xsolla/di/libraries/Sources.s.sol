@@ -2,6 +2,8 @@
 pragma solidity ^0.8.24;
 
 import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+
+import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 // Artifact imports (grouped by domain with corrected paths)
@@ -57,6 +59,7 @@ library Sources {
     using ShortStrings for ShortString;
 
     bytes32 public constant NICKNAMED_PROXY_FLAG = keccak256("NICKNAMED_PROXY_FLAG");
+    bytes32 public constant EIP4337_FLAG = keccak256("EIP4337_FLAG");
 
     enum Source {
         NONE,
@@ -89,7 +92,8 @@ library Sources {
         WebAuthnValidator,
         WETH9,
         XsollaRecoveryExecutor,
-        TransparentUpgradeableProxy
+        TransparentUpgradeableProxy,
+        UpgradeableBeacon
     }
 
     error UnknownMetaArtifact();
@@ -185,6 +189,9 @@ library Sources {
         if (metaArtifact == Source.TransparentUpgradeableProxy) {
             return type(TransparentUpgradeableProxy).creationCode;
         }
+        if (metaArtifact == Source.UpgradeableBeacon) {
+            return type(UpgradeableBeacon).creationCode;
+        }
         revert UnknownMetaArtifact();
     }
 
@@ -266,6 +273,9 @@ library Sources {
         }
         if (metaArtifact == Source.TransparentUpgradeableProxy) {
             return type(TransparentUpgradeableProxy).name;
+        }
+        if (metaArtifact == Source.UpgradeableBeacon) {
+            return type(UpgradeableBeacon).name;
         }
         revert UnknownMetaArtifact();
     }

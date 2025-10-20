@@ -1,2 +1,18 @@
 [anvil-hardhat]
 endpoint_url = "${ANVIL_RPC_URL}"
+
+[anvil-hardhat.address]
+EOAKeyValidator = "0x573A6551F76Be7E052935506c066d9E9D3104C87"
+TransparentUpgradeableProxy_EOAKeyValidator = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+SessionKeyValidator = "0x13D285D4f6038212C7C713D21E581AdC8942eA46"
+TransparentUpgradeableProxy_SessionKeyValidator = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+WebAuthnValidator = "0xF7700ec6F17AaC0ebcafa69D465530AD0D025beb"
+TransparentUpgradeableProxy_WebAuthnValidator = "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+GuardianExecutor = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+TransparentUpgradeableProxy_GuardianExecutor = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+ModularSmartAccount = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
+UpgradeableBeacon = "0x9A676e781A523b5d0C0e43731313A708CB607508"
+MSAFactory = "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+TransparentUpgradeableProxy_MSAFactory = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
+XsollaRecoveryExecutor = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+ModularSmartAccount_Alice = "0x8A451eFee8D74e632A42f6659c657fcc8D9cb0Ff"

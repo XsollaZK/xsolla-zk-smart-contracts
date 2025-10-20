@@ -7,11 +7,11 @@ import { WETH9 } from "src/xsolla/WETH9.sol";
 import { Faucet } from "src/xsolla/Faucet.sol";
 
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
-import { DeployStage } from "xsolla/scripts/di/DeployStage.s.sol";
+import { Autowirable } from "xsolla/scripts/di/Autowirable.s.sol";
 
 /// @title NativeCurrency Deployment Script
 /// @notice Minimal deployment for WETH9 and Faucet contracts
-contract NativeCurrency is DeployStage {
+contract NativeCurrency is Autowirable {
     using Sources for Sources.Source;
 
     error FaucetNotDeployed();
