@@ -28,7 +28,15 @@ contract SSO is Autowirable {
     StdConfigBasedGuardianExecutorConfiguration private guardianExecutorConfig;
     StdConfigBasedXsollaRecoveryExecutorConfiguration private xsollaRecoveryConfig;
 
-    function deployFactory()
+    function setUp() public {
+        eip4337FactoryConfig = new StdConfigBasedEip4337FactoryConfiguration(vm, wiringMechanism, msg.sender);
+        guardianExecutorConfig = new StdConfigBasedGuardianExecutorConfiguration(vm, wiringMechanism, msg.sender);
+        xsollaRecoveryConfig = new StdConfigBasedXsollaRecoveryExecutorConfiguration(
+            vm, wiringMechanism, msg.sender, msg.sender, msg.sender
+        );
+    }
+
+    function run() 
         public
         proxywire(Sources.Source.EOAKeyValidator)
         proxywire(Sources.Source.SessionKeyValidator)
@@ -61,17 +69,5 @@ contract SSO is Autowirable {
         console.log(
             "ModularSmartAccount implementation:", autowired(Sources.Source.ModularSmartAccount, ALICE_SMART_ACC)
         );
-    }
-
-    function setUp() public {
-        eip4337FactoryConfig = new StdConfigBasedEip4337FactoryConfiguration(vm, wiringMechanism, msg.sender);
-        guardianExecutorConfig = new StdConfigBasedGuardianExecutorConfiguration(vm, wiringMechanism, msg.sender);
-        xsollaRecoveryConfig = new StdConfigBasedXsollaRecoveryExecutorConfiguration(
-            vm, wiringMechanism, msg.sender, msg.sender, msg.sender
-        );
-    }
-
-    function run() public {
-        deployFactory();
     }
 }
