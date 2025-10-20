@@ -24,11 +24,9 @@ contract XsollaRecoveryExecutorFuzzTest is MSATest {
         // finalizer, submitter)
         executor = new XsollaRecoveryExecutor(
             address(0),
-            address(eoaValidator),
-            address(this), // admin
-            address(this), // finalizer
-            address(this) // submitter
+            address(eoaValidator)
         );
+        executor.initialize(address(this), address(this), address(this));
 
         // Install executor module on the smart account (mirrors Guardian.t.sol
         // style)

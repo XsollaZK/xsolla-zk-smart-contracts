@@ -2,7 +2,9 @@
 pragma solidity ^0.8.24;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import { LibERC7579 } from "solady/accounts/LibERC7579.sol";
 
 import { WebAuthnValidator } from "../../modules/WebAuthnValidator.sol";
@@ -23,7 +25,7 @@ import { ModeLib, ModeCode } from "../../libraries/ModeLib.sol";
 ///    and strictly before (timestamp + REQUEST_VALIDITY_TIME) expires.
 /// 3. discardRecovery()/discardRecoveryFor(): cancels an active request.
 /// A recovery is considered active if (timestamp != 0 && data.length != 0).
-contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
+contract XsollaRecoveryExecutor is GuardianExecutor, Initializable, AccessControlUpgradeable {
     /// @notice Role allowed to submit (initialize) recovery requests acting as
     /// the implicit guardian. @dev Holders can start or discard recoveries for
     /// any account.
@@ -43,22 +45,20 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
     /// recovery exists.
     error CannotDiscardRecoveryFor(address account);
 
-    /// @notice Deploys the executor and assigns role addresses.
-    /// @param _webAuthValidator Address of the installed WebAuthn (passkey)
-    /// validator. @param _eoaValidator Address of the installed EOA key
-    /// validator.
-    /// @param _admin Address granted DEFAULT_ADMIN_ROLE (can grant/revoke other
-    /// roles). @param _finalizer Address granted FINALIZER_ROLE (may finalize
-    /// recoveries).
-    /// @param _submitter Address granted SUBMITTER_ROLE (may initialize/discard
-    /// recoveries).
+    // NOTE:
+    // - Keep a minimal constructor only to satisfy GuardianExecutor's constructor
+    //   (validators are fixed at implementation deploy time).
+    // - Do NOT set roles here; roles are set via initialize() for proxies.
     constructor(
         address _webAuthValidator,
-        address _eoaValidator,
-        address _admin,
-        address _finalizer,
-        address _submitter
-    ) GuardianExecutor(_webAuthValidator, _eoaValidator) {
+        address _eoaValidator
+    ) GuardianExecutor(_webAuthValidator, _eoaValidator) { }
+
+    /// @notice Initializer for TransparentUpgradeableProxy deployments.
+    /// @dev Call this once via proxy right after deploying the proxy.
+    /// Grants admin/submitter/finalizer roles.
+    function initialize(address _admin, address _finalizer, address _submitter) external initializer {
+        __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(FINALIZER_ROLE, _finalizer);
         _grantRole(SUBMITTER_ROLE, _submitter);
@@ -216,4 +216,7 @@ contract XsollaRecoveryExecutor is GuardianExecutor, AccessControl {
             revert CannotDiscardRecoveryFor(account);
         }
     }
+
+    // Reserve storage space for upgradeability.
+    uint256[50] private __gap;
 }

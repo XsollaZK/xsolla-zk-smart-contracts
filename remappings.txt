@@ -1,3 +1,4 @@
+@openzeppelin/contracts-upgradeable/=dependencies/@openzeppelin-contracts-upgradeable-5.5.0-rc.1/
 @openzeppelin/contracts/=dependencies/@openzeppelin-contracts-5.4.0/
 account-abstraction/=dependencies/eth-infinitism-account-abstraction-0.8.0/contracts
 forge-std/=dependencies/forge-std-master-06-10-2025/src

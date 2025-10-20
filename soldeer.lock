@@ -6,6 +6,13 @@ checksum = "3dd38f17610dba4602bd008ee2cb551e51e97d7b4ce04e1ffdf853da832942fa"
 integrity = "4eb0ef219d10ab5a5708adaae1132dc0a93ab6a193378486e842d606c989ff3e"
 
 [[dependencies]]
+name = "@openzeppelin-contracts-upgradeable"
+version = "5.5.0-rc.1"
+url = "https://soldeer-revisions.s3.amazonaws.com/@openzeppelin-contracts-upgradeable/5_5_0-rc_1_15-10-2025_06:15:24_contracts-upgradeable.zip"
+checksum = "6e07ffd426a000d3deb27ca4614ea218cc2574c18566331ae18dcd67d41586fa"
+integrity = "0bf0be32c74013d700b537a3d66956ec4ca36c723a5c78659c5e6878769731f1"
+
+[[dependencies]]
 name = "eth-infinitism-account-abstraction"
 version = "0.8.0"
 url = "https://soldeer-revisions.s3.amazonaws.com/eth-infinitism-account-abstraction/0_8_0_24-03-2025_13:49:05_eth-infinitism-account-abstraction-0.8.zip"

@@ -44,11 +44,11 @@ contract StdConfigBasedXsollaRecoveryExecutorConfiguration is IConfiguration {
         address eoaKeyValidator = config.get(Sources.Source.EOAKeyValidator.toString()).toAddress();
 
         vm.startBroadcast();
-        address recoveryExecutor =
-            address(new XsollaRecoveryExecutor(webAuthnValidator, eoaKeyValidator, admin, finalizer, submitter));
+        XsollaRecoveryExecutor recoveryExecutor = new XsollaRecoveryExecutor(webAuthnValidator, eoaKeyValidator);
+        recoveryExecutor.initialize(admin, finalizer, submitter);
         vm.stopBroadcast();
 
         // Store the recovery executor address under the plain source key
-        config.set(Sources.Source.XsollaRecoveryExecutor.toString(), recoveryExecutor);
+        config.set(Sources.Source.XsollaRecoveryExecutor.toString(), address(recoveryExecutor));
     }
 }
