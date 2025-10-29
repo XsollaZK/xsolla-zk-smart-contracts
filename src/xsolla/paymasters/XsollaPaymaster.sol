@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 import { BasePaymaster } from "account-abstraction/core/BasePaymaster.sol";
 import { IPaymaster } from "account-abstraction/interfaces/IPaymaster.sol";
+
 import { MSAFactory } from "../../MSAFactory.sol";
 
 /// @title XsollaPaymaster
@@ -44,6 +47,7 @@ contract XsollaPaymaster is BasePaymaster {
     error ExceedsAccountSpendingLimit(address account, uint256 currentSpending, uint256 additionalCost, uint256 limit);
     error InsufficientDeposit(uint256 required, uint256 available);
     error NotBeaconProxy(address account);
+    error InvalidPaymasterData(uint256 actualLength, uint256 expectedMinLength);
 
     /// @notice Initialize the XsollaPaymaster
     /// @param _entryPoint The EntryPoint contract (v0.8)
@@ -79,9 +83,9 @@ contract XsollaPaymaster is BasePaymaster {
             revert ExceedsMaxCost(maxCost, maxCostPerUserOp);
         }
 
-        // Verify that the sender is an account created by our MSAFactory
+        // Extract accountId from paymasterAndData and verify that the sender is an account created by our MSAFactory
         address account = userOp.sender;
-        if (!_isValidMSAAccount(account)) {
+        if (!_isValidMSAAccount(account, userOp.paymasterAndData)) {
             revert InvalidAccount();
         }
 
@@ -126,35 +130,40 @@ contract XsollaPaymaster is BasePaymaster {
 
     /// @notice Check if an account was created by our MSAFactory
     /// @param account The account address to check
+    /// @param paymasterAndData The paymasterAndData field from PackedUserOperation containing accountId
     /// @return isValid True if the account is a valid MSA account
-    function _isValidMSAAccount(address account) internal view returns (bool isValid) {
+    function _isValidMSAAccount(address account, bytes calldata paymasterAndData) internal view returns (bool isValid) {
         // Check if the account has code (beacon proxy should have code)
         if (account.code.length == 0) {
             return false;
         }
 
-        // Check if the account code matches the expected beacon proxy pattern
-        // We'll compare the code hash with a known deployed account to see if it matches
-        // the beacon proxy pattern. This is a heuristic approach.
+        // Extract accountId from paymasterAndData
+        // paymasterAndData format: [paymaster(20)] + [verificationGasLimit(16)] + [postOpGasLimit(16)] + [accountId(32)]
+        // Total expected minimum length: 20 + 16 + 16 + 32 = 84 bytes
+        if (paymasterAndData.length < 84) {
+            revert InvalidPaymasterData(paymasterAndData.length, 84);
+        }
 
-        // Alternative: iterate through potential account IDs to see if any match
-        // But this is expensive. For now, we'll trust that accounts with code
-        // that match the expected pattern are valid.
+        // Extract accountId from the last 32 bytes
+        bytes32 accountId;
+        assembly {
+            accountId := calldataload(add(paymasterAndData.offset, 52)) // offset 52 = 20 + 16 + 16
+        }
 
-        // Simple heuristic: check if the code size is reasonable for a beacon proxy
-        // Beacon proxies typically have small code size (around 100-200 bytes)
-        uint256 codeSize = account.code.length;
-        return codeSize > 50 && codeSize < 1000; // Reasonable range for beacon proxy
+        // Check if this accountId maps to the given account address in MSAFactory
+        return msaFactory.accountRegistry(accountId) == account;
     }
 
     /// @notice External function to get beacon address from an account (used for validation)
     /// @param account The account to check
+    /// @param paymasterAndData The paymasterAndData containing accountId
     /// @return beacon The beacon address
-    function getAccountBeacon(address account) external view returns (address beacon) {
+    function getAccountBeacon(address account, bytes calldata paymasterAndData) external view returns (address beacon) {
         // For beacon proxies, we can't easily read the beacon address
         // since it's stored in an immutable variable and ERC-1967 storage slot
         // Let's return the factory's beacon if the account appears valid
-        if (_isValidMSAAccount(account)) {
+        if (_isValidMSAAccount(account, paymasterAndData)) {
             return msaFactory.beacon();
         } else {
             revert NotBeaconProxy(account);
@@ -195,8 +204,18 @@ contract XsollaPaymaster is BasePaymaster {
     /// @notice Check if an account is valid for sponsorship
     /// @param account The account to check
     /// @return isValid True if the account can be sponsored
+    /// @dev This function is deprecated, use isValidAccount(address, bytes) instead
     function isValidAccount(address account) external view returns (bool isValid) {
-        return _isValidMSAAccount(account);
+        // Fallback: just check if account has code - not fully secure without accountId
+        return account.code.length > 0;
+    }
+
+    /// @notice Check if an account is valid for sponsorship
+    /// @param account The account to check
+    /// @param paymasterAndData The paymasterAndData containing accountId
+    /// @return isValid True if the account can be sponsored
+    function isValidAccount(address account, bytes calldata paymasterAndData) external view returns (bool isValid) {
+        return _isValidMSAAccount(account, paymasterAndData);
     }
 
     /// @notice Get the remaining spending allowance for an account

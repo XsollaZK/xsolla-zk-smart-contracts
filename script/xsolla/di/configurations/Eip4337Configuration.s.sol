@@ -10,6 +10,7 @@ import { LibVariable, Variable } from "forge-std/LibVariable.sol";
 
 import { MSAFactory } from "src/MSAFactory.sol";
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
+import { AccountIdsLib } from "src/xsolla/libraries/AccountIdsLib.sol";
 
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
@@ -68,7 +69,7 @@ contract Eip4337Configuration is IConfiguration {
         modules[2] = webAuthnValidator;
         modules[3] = recoveryExecutor;
         modules[4] = guardianExecutor;
-        bytes32 accountId = keccak256(abi.encodePacked(nickname, owner));
+        bytes32 accountId = AccountIdsLib.getAccountId(owner);
         // initData must align 1:1 with modules. Fill non-EOA modules with empty bytes.
         bytes[] memory initData = new bytes[](5);
         address[] memory accountOwners = new address[](1);

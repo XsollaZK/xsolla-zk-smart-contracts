@@ -328,7 +328,7 @@ contract BasicTest is MSATest {
 
         bytes memory call = encodeCall(address(target), 0, abi.encodeCall(MockTarget.setValue, 1337));
         PackedUserOperation[] memory userOps = makeUserOp(call);
-        userOps[0].paymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6));
+        userOps[0].paymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), keccak256("my-account-id"));
         signUserOp(userOps[0], owner.key, address(eoaValidator));
 
         paymaster.deposit{ value: 0.5 ether }();

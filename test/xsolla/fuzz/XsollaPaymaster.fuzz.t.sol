@@ -13,11 +13,16 @@ import { MSATest } from "../../MSATest.sol";
 
 contract XsollaPaymasterFuzzTest is MSATest {
     XsollaPaymaster public paymaster;
-
+    
     // Test constants
     uint256 public constant DEFAULT_MAX_COST_PER_USER_OP = 1e18; // 1 ETH
     uint256 public constant DEFAULT_MAX_SPENDING_PER_ACCOUNT = 10e18; // 10 ETH
     uint256 public constant PAYMASTER_DEPOSIT = 100e18; // 100 ETH
+
+    // Account IDs for testing
+    bytes32 public constant MAIN_ACCOUNT_ID = keccak256("my-account-id");
+    bytes32 public constant VALID_ACCOUNT_ID = keccak256(abi.encode("validAccount"));
+    bytes32 public constant INVALID_ACCOUNT_ID = keccak256("invalid-account-id"); // Not deployed through factory
 
     // Test accounts
     Account public paymasterOwner;
@@ -73,7 +78,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
         return newAccount;
     }
 
-    function createUserOpWithCost(address sender, uint256 maxCost) internal view returns (PackedUserOperation memory) {
+    function createUserOpWithCost(address sender, uint256 maxCost, bytes32 accountId) internal view returns (PackedUserOperation memory) {
         return PackedUserOperation({
             sender: sender,
             nonce: entryPoint.getNonce(sender, 0),
@@ -82,7 +87,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
             accountGasLimits: bytes32(abi.encodePacked(uint128(maxCost), uint128(maxCost))),
             preVerificationGas: maxCost,
             gasFees: bytes32(abi.encodePacked(uint128(1), uint128(1))),
-            paymasterAndData: abi.encodePacked(address(paymaster)),
+            paymasterAndData: abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), accountId),
             signature: ""
         });
     }
@@ -103,7 +108,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
         vm.assume(maxCost <= PAYMASTER_DEPOSIT);
 
         // Use the account from MSATest setup which is known to be valid
-        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost);
+        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost, MAIN_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         // Call from EntryPoint to avoid "Sender not EntryPoint" error
@@ -118,7 +123,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
         vm.assume(maxCost > DEFAULT_MAX_COST_PER_USER_OP);
         vm.assume(maxCost <= type(uint128).max); // Avoid overflow in PackedUserOperation
 
-        PackedUserOperation memory userOp = createUserOpWithCost(address(validAccount), maxCost);
+        PackedUserOperation memory userOp = createUserOpWithCost(address(validAccount), maxCost, VALID_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         vm.prank(address(entryPoint));
@@ -131,7 +136,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
     function testFuzz_ValidatePaymasterUserOp_InvalidAccount(uint256 maxCost) public {
         vm.assume(maxCost > 0 && maxCost <= DEFAULT_MAX_COST_PER_USER_OP);
 
-        PackedUserOperation memory userOp = createUserOpWithCost(invalidAccount, maxCost);
+        PackedUserOperation memory userOp = createUserOpWithCost(invalidAccount, maxCost, INVALID_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         vm.prank(address(entryPoint));
@@ -166,7 +171,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
             bytes32(previousSpending)
         );
 
-        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost);
+        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost, MAIN_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         vm.prank(address(entryPoint));
@@ -193,7 +198,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
         paymaster.withdrawTo(payable(paymasterOwner.addr), withdrawAmount);
 
         // Use the account from MSATest setup which is known to be valid
-        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost);
+        PackedUserOperation memory userOp = createUserOpWithCost(address(account), maxCost, MAIN_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         vm.prank(address(entryPoint));
@@ -206,7 +211,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
         vm.prank(paymasterOwner.addr);
         paymaster.pause();
 
-        PackedUserOperation memory userOp = createUserOpWithCost(address(validAccount), 1000);
+        PackedUserOperation memory userOp = createUserOpWithCost(address(validAccount), 1000, VALID_ACCOUNT_ID);
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
 
         vm.prank(address(entryPoint));
@@ -285,26 +290,32 @@ contract XsollaPaymasterFuzzTest is MSATest {
     }
 
     function testFuzz_IsValidAccount_ValidAccount() public view {
-        assertTrue(paymaster.isValidAccount(address(account)));
+        bytes memory validPaymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), MAIN_ACCOUNT_ID);
+        assertTrue(paymaster.isValidAccount(address(account), validPaymasterAndData));
         // Note: validAccount might not be properly initialized as a beacon proxy
         // so we test with the main account from MSATest setup
     }
 
     function testFuzz_IsValidAccount_InvalidAccount() public view {
-        assertFalse(paymaster.isValidAccount(invalidAccount));
-        assertFalse(paymaster.isValidAccount(address(0)));
+        bytes memory invalidPaymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), INVALID_ACCOUNT_ID);
+        assertFalse(paymaster.isValidAccount(invalidAccount, invalidPaymasterAndData));
+        
+        bytes memory zeroPaymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), bytes32(0));
+        assertFalse(paymaster.isValidAccount(address(0), zeroPaymasterAndData));
     }
 
     function testFuzz_GetAccountBeacon_ValidAccount() public view {
-        address beacon = paymaster.getAccountBeacon(address(account));
+        bytes memory paymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), MAIN_ACCOUNT_ID);
+        address beacon = paymaster.getAccountBeacon(address(account), paymasterAndData);
         assertEq(beacon, factory.beacon());
         // Note: validAccount might not be properly initialized as a beacon proxy
         // so we test with the main account from MSATest setup
     }
 
     function testFuzz_GetAccountBeacon_InvalidAccount() public {
+        bytes memory paymasterAndData = abi.encodePacked(address(paymaster), uint128(2e6), uint128(2e6), INVALID_ACCOUNT_ID);
         vm.expectRevert(abi.encodeWithSelector(XsollaPaymaster.NotBeaconProxy.selector, invalidAccount));
-        paymaster.getAccountBeacon(invalidAccount);
+        paymaster.getAccountBeacon(invalidAccount, paymasterAndData);
     }
 
     // Edge case: Test with zero values
@@ -379,7 +390,7 @@ contract XsollaPaymasterFuzzTest is MSATest {
     function testFuzz_Unauthorized_Unpause(address unauthorized) public {
         vm.assume(unauthorized != paymasterOwner.addr);
         vm.assume(unauthorized != address(0));
-
+        
         vm.prank(unauthorized);
         vm.expectRevert(); // Just expect any revert for ownership check
         paymaster.unpause();
