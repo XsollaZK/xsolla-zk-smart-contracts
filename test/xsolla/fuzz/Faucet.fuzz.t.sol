@@ -16,6 +16,8 @@ contract FaucetFuzzTest is Test {
 
     function testFuzz_FaucetClaim_Success(address destination, uint256 timeOffset) public {
         vm.assume(destination != address(0));
+        vm.assume(destination != address(faucet));
+        vm.assume(destination.code.length == 0); // Only EOAs can receive ETH without payable fallback
         vm.assume(timeOffset >= 24 hours && timeOffset <= 365 days);
         vm.assume(timeOffset <= type(uint256).max - block.timestamp);
 
@@ -52,6 +54,8 @@ contract FaucetFuzzTest is Test {
 
     function testFuzz_FaucetClaim_RevertTooEarly(address destination, uint256 timeOffset) public {
         vm.assume(destination != address(0));
+        vm.assume(destination != address(faucet));
+        vm.assume(destination.code.length == 0); // Only EOAs can receive ETH without payable fallback
         vm.assume(timeOffset > 0 && timeOffset < 24 hours);
         vm.assume(timeOffset <= type(uint256).max - block.timestamp);
 
@@ -73,6 +77,8 @@ contract FaucetFuzzTest is Test {
 
     function testFuzz_AvailableToFaucet(address destination, uint256 timeOffset) public {
         vm.assume(destination != address(0));
+        vm.assume(destination != address(faucet));
+        vm.assume(destination.code.length == 0); // Only EOAs can receive ETH without payable fallback
         vm.assume(timeOffset <= 365 days);
         vm.assume(timeOffset <= type(uint256).max - block.timestamp);
 
