@@ -14,7 +14,7 @@ import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
 
-contract StdConfigBasedEip4337Configuration is IConfiguration {
+contract Eip4337Configuration is IConfiguration {
     using ShortStrings for ShortString;
     using Sources for Sources.Source;
     using LibVariable for Variable;
@@ -40,11 +40,28 @@ contract StdConfigBasedEip4337Configuration is IConfiguration {
                 Sources.Source.TransparentUpgradeableProxy
                 .getFullNicknamedName(ShortStrings.toShortString("MSAFactory"))
             ).toAddress();
-        address eoaKeyValidator = config.get(Sources.Source.EOAKeyValidator.toString()).toAddress();
-        address sessionKeyValidator = config.get(Sources.Source.SessionKeyValidator.toString()).toAddress();
-        address webAuthnValidator = config.get(Sources.Source.WebAuthnValidator.toString()).toAddress();
-        address recoveryExecutor = config.get(Sources.Source.XsollaRecoveryExecutor.toString()).toAddress();
-        address guardianExecutor = config.get(Sources.Source.GuardianExecutor.toString()).toAddress();
+        address eoaKeyValidator = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.EOAKeyValidator.toString()))
+            ).toAddress();
+        address sessionKeyValidator = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.SessionKeyValidator.toString()))
+            ).toAddress();
+        address webAuthnValidator = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.WebAuthnValidator.toString()))
+            ).toAddress();
+        address recoveryExecutor = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(
+                        ShortStrings.toShortString(Sources.Source.GuardianBasedRecoveryExecutor.toString())
+                    )
+            ).toAddress();
+        address guardianExecutor = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.GuardianExecutor.toString()))
+            ).toAddress();
         address[] memory modules = new address[](5);
         modules[0] = eoaKeyValidator;
         modules[1] = sessionKeyValidator;

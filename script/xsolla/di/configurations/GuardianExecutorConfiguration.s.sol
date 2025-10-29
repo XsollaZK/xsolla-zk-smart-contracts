@@ -13,8 +13,9 @@ import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
 import { IWiringMechanism } from "xsolla/scripts/di/interfaces/IWiringMechanism.s.sol";
 import { StdConfigBasedWiring } from "xsolla/scripts/di/wiring/StdConfigBasedWiring.s.sol";
+import { TUPConfiguration } from "xsolla/scripts/di/configurations/TUPConfiguration.s.sol";
 
-contract StdConfigBasedGuardianExecutorConfiguration is IConfiguration {
+contract GuardianExecutorConfiguration is IConfiguration {
     using ShortStrings for ShortString;
     using Sources for Sources.Source;
 
@@ -33,18 +34,21 @@ contract StdConfigBasedGuardianExecutorConfiguration is IConfiguration {
     }
 
     function startAutowiringSources() external override {
-        vm.startBroadcast();
-        address webAuthnValidator = config.get(Sources.Source.WebAuthnValidator.toString()).toAddress();
-        address eoaKeyValidator = config.get(Sources.Source.EOAKeyValidator.toString()).toAddress();
-        address guardianExecutor = address(new GuardianExecutor(webAuthnValidator, eoaKeyValidator));
-        config.set(Sources.Source.GuardianExecutor.toString(), guardianExecutor);
-        address proxy = address(new TransparentUpgradeableProxy(guardianExecutor, proxyOwner, ""));
-        config.set(getProxySourceKey(), proxy);
-        vm.stopBroadcast();
-    }
+        address webAuthnValidator = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.WebAuthnValidator.toString()))
+            ).toAddress();
+        address eoaKeyValidator = config.get(
+                Sources.Source.TransparentUpgradeableProxy
+                    .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.EOAKeyValidator.toString()))
+            ).toAddress();
 
-    function getProxySourceKey() public view returns (string memory) {
-        return Sources.Source.TransparentUpgradeableProxy
-            .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.GuardianExecutor.toString()));
+        vm.broadcast();
+        address guardianExecutorImpl = address(new GuardianExecutor(webAuthnValidator, eoaKeyValidator));
+        config.set(Sources.Source.GuardianExecutor.toString(), guardianExecutorImpl);
+
+        TUPConfiguration tupConfig =
+            new TUPConfiguration(vm, config, proxyOwner, guardianExecutorImpl, Sources.Source.GuardianExecutor);
+        tupConfig.startAutowiringSources();
     }
 }

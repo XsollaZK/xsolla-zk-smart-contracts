@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 import { EntryPoint } from "account-abstraction/core/EntryPoint.sol";
+import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { Test } from "forge-std/Test.sol";
@@ -21,6 +22,8 @@ contract MSATest is Test {
     EOAKeyValidator public eoaValidator;
     Account public owner;
     address payable bundler;
+
+    bytes32 public constant SIMPLE_SINGLE_MODE = bytes32(0);
 
     function setUp() public virtual {
         bundler = payable(makeAddr("bundler"));
@@ -50,8 +53,9 @@ contract MSATest is Test {
         vm.deal(address(account), 2 ether);
     }
 
-    function makeUserOp(bytes memory callData) public view returns (PackedUserOperation memory userOp) {
-        userOp = PackedUserOperation({
+    function makeUserOp(bytes memory callData) public view returns (PackedUserOperation[] memory userOps) {
+        userOps = new PackedUserOperation[](1);
+        userOps[0] = PackedUserOperation({
             sender: address(account),
             nonce: entryPoint.getNonce(address(account), 0),
             initCode: "",
@@ -64,13 +68,9 @@ contract MSATest is Test {
         });
     }
 
-    function makeSignedUserOp(bytes memory callData, uint256 key, address validator)
-        public
-        view
-        returns (PackedUserOperation memory userOp)
-    {
-        userOp = makeUserOp(callData);
-        signUserOp(userOp, key, validator);
+    function makeSignedUserOp(bytes memory callData) public view returns (PackedUserOperation[] memory userOps) {
+        userOps = makeUserOp(callData);
+        signUserOp(userOps[0], owner.key, address(eoaValidator));
     }
 
     function signUserOp(PackedUserOperation memory userOp, uint256 key, address validator) public view {
@@ -79,15 +79,18 @@ contract MSATest is Test {
         userOp.signature = abi.encodePacked(validator, r, s, v);
     }
 
-    function simpleSingleMode() public pure returns (bytes32) {
-        return LibERC7579.encodeMode(LibERC7579.CALLTYPE_SINGLE, LibERC7579.EXECTYPE_DEFAULT, 0, 0);
+    function encodeCall(address target, uint256 value, bytes memory data) public pure returns (bytes memory) {
+        return abi.encodeCall(ModularSmartAccount.execute, (SIMPLE_SINGLE_MODE, abi.encodePacked(target, value, data)));
     }
 
-    function encodeSingle(address target, uint256 value, bytes memory data) public pure returns (bytes memory) {
-        return abi.encodePacked(target, value, data);
-    }
+    function expectUserOpRevert(PackedUserOperation memory userOp, bytes memory reason) public {
+        PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
+        userOps[0] = userOp;
 
-    function encodeBatch(Execution[] memory executions) public pure returns (bytes memory) {
-        return abi.encode(executions);
+        vm.expectEmit(true, true, true, true);
+        emit IEntryPoint.UserOperationRevertReason(
+            entryPoint.getUserOpHash(userOp), address(account), userOp.nonce, reason
+        );
+        entryPoint.handleOps(userOps, bundler);
     }
 }

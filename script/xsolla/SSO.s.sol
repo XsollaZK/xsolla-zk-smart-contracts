@@ -3,15 +3,11 @@ pragma solidity ^0.8.28;
 
 import { ShortStrings, ShortString } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 
+import { Eip4337FactoryConfiguration } from "xsolla/scripts/di/configurations/Eip4337FactoryConfiguration.s.sol";
+import { GuardianExecutorConfiguration } from "xsolla/scripts/di/configurations/GuardianExecutorConfiguration.s.sol";
 import {
-    StdConfigBasedEip4337FactoryConfiguration
-} from "xsolla/scripts/di/configurations/StdConfigBasedEip4337FactoryConfiguration.s.sol";
-import {
-    StdConfigBasedGuardianExecutorConfiguration
-} from "xsolla/scripts/di/configurations/StdConfigBasedGuardianExecutorConfiguration.s.sol";
-import {
-    StdConfigBasedXsollaRecoveryExecutorConfiguration
-} from "xsolla/scripts/di/configurations/StdConfigBasedXsollaRecoveryExecutorConfiguration.s.sol";
+    GuardianBasedRecoveryExecutorConfiguration
+} from "xsolla/scripts/di/configurations/GuardianBasedRecoveryExecutorConfiguration.s.sol";
 
 import { console } from "forge-std/console.sol";
 
@@ -24,19 +20,18 @@ contract SSO is Autowirable {
 
     string public constant ALICE_SMART_ACC = "Alice";
 
-    StdConfigBasedEip4337FactoryConfiguration private eip4337FactoryConfig;
-    StdConfigBasedGuardianExecutorConfiguration private guardianExecutorConfig;
-    StdConfigBasedXsollaRecoveryExecutorConfiguration private xsollaRecoveryConfig;
+    Eip4337FactoryConfiguration private eip4337FactoryConfig;
+    GuardianExecutorConfiguration private guardianExecutorConfig;
+    GuardianBasedRecoveryExecutorConfiguration private xsollaRecoveryConfig;
 
     function setUp() public {
-        eip4337FactoryConfig = new StdConfigBasedEip4337FactoryConfiguration(vm, wiringMechanism, msg.sender);
-        guardianExecutorConfig = new StdConfigBasedGuardianExecutorConfiguration(vm, wiringMechanism, msg.sender);
-        xsollaRecoveryConfig = new StdConfigBasedXsollaRecoveryExecutorConfiguration(
-            vm, wiringMechanism, msg.sender, msg.sender, msg.sender
-        );
+        eip4337FactoryConfig = new Eip4337FactoryConfiguration(vm, wiringMechanism, msg.sender);
+        guardianExecutorConfig = new GuardianExecutorConfiguration(vm, wiringMechanism, msg.sender);
+        xsollaRecoveryConfig =
+            new GuardianBasedRecoveryExecutorConfiguration(vm, wiringMechanism, msg.sender, msg.sender, msg.sender);
     }
 
-    function run() 
+    function run()
         public
         proxywire(Sources.Source.EOAKeyValidator)
         proxywire(Sources.Source.SessionKeyValidator)

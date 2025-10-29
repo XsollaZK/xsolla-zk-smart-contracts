@@ -12,10 +12,8 @@ import { console } from "forge-std/console.sol";
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IWiringMechanism } from "xsolla/scripts/di/interfaces/IWiringMechanism.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
-import {
-    StdConfigBasedEip4337Configuration
-} from "xsolla/scripts/di/configurations/StdConfigBasedEip4337Configuration.s.sol";
-import { StdConfigBasedTUPConfiguration } from "xsolla/scripts/di/configurations/StdConfigBasedTUPConfiguration.s.sol";
+import { Eip4337Configuration } from "xsolla/scripts/di/configurations/Eip4337Configuration.s.sol";
+import { TUPConfiguration } from "xsolla/scripts/di/configurations/TUPConfiguration.s.sol";
 
 contract StdConfigBasedWiring is IWiringMechanism, Config {
     using Sources for Sources.Source;
@@ -96,8 +94,7 @@ contract StdConfigBasedWiring is IWiringMechanism, Config {
                     // Save the implementation under the plain source key for consumers expecting the module logic
                     // address
                     config.set(source.toString(), implAddress);
-                    StdConfigBasedTUPConfiguration tupConfig =
-                        new StdConfigBasedTUPConfiguration(vm, config, deployerAddress, implAddress, source);
+                    TUPConfiguration tupConfig = new TUPConfiguration(vm, config, deployerAddress, implAddress, source);
                     tupConfig.startAutowiringSources();
                     return config.get(tupConfig.getProxySourceKey()).toAddress();
                 } else if (stdConfigurationFlag == Sources.EIP4337_FLAG) {
@@ -107,8 +104,7 @@ contract StdConfigBasedWiring is IWiringMechanism, Config {
                         revert UnsupportedWiringType();
                     }
                     ShortString nickname = ShortStrings.toShortString(abi.decode(restOfInfo, (string)));
-                    StdConfigBasedEip4337Configuration eip4337Config =
-                        new StdConfigBasedEip4337Configuration(vm, config, ownerAddress, nickname);
+                    Eip4337Configuration eip4337Config = new Eip4337Configuration(vm, config, ownerAddress, nickname);
                     eip4337Config.startAutowiringSources();
                     return config.get(eip4337Config.getAccountSourceKey()).toAddress();
                 } else {

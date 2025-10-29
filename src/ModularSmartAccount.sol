@@ -101,11 +101,32 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
         onlyEntryPointOrSelf
     {
         if (moduleTypeId == MODULE_TYPE_VALIDATOR) {
-            _uninstallValidator(module, deInitData);
+            _uninstallValidator(module, deInitData, false);
         } else if (moduleTypeId == MODULE_TYPE_EXECUTOR) {
-            _uninstallExecutor(module, deInitData);
+            _uninstallExecutor(module, deInitData, false);
         } else if (moduleTypeId == MODULE_TYPE_FALLBACK) {
-            _uninstallFallbackHandler(module, deInitData);
+            _uninstallFallbackHandler(module, deInitData, false);
+        } else {
+            revert UnsupportedModuleType(moduleTypeId);
+        }
+        emit ModuleUninstalled(moduleTypeId, module);
+    }
+
+    /// @notice Uninstall a module while allowing its cleanup to revert without bubbling up.
+    /// @param moduleTypeId Type identifier of the module being removed.
+    /// @param module Address of the module to unlink.
+    /// @param deInitData ABI-encoded data forwarded to the uninstall routine when possible.
+    function unlinkModule(uint256 moduleTypeId, address module, bytes calldata deInitData)
+        external
+        payable
+        onlyEntryPointOrSelf
+    {
+        if (moduleTypeId == MODULE_TYPE_VALIDATOR) {
+            _uninstallValidator(module, deInitData, true);
+        } else if (moduleTypeId == MODULE_TYPE_EXECUTOR) {
+            _uninstallExecutor(module, deInitData, true);
+        } else if (moduleTypeId == MODULE_TYPE_FALLBACK) {
+            _uninstallFallbackHandler(module, deInitData, true);
         } else {
             revert UnsupportedModuleType(moduleTypeId);
         }
@@ -137,6 +158,7 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
         }
     }
 
+    /// @inheritdoc IERC7579Account
     function isValidSignature(bytes32 hash, bytes calldata data)
         public
         view
@@ -194,7 +216,7 @@ contract ModularSmartAccount is IMSA, ExecutionHelper, ERC1271Handler, RegistryA
         else return false;
     }
 
-    /// @dev Initializes the account.
+    /// @inheritdoc IMSA
     function initializeAccount(address[] calldata modules, bytes[] calldata data) external payable virtual initializer {
         for (uint256 i = 0; i < modules.length; i++) {
             address module = modules[i];

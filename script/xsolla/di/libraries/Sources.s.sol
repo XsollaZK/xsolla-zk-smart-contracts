@@ -20,7 +20,7 @@ import { AllowedSessionsValidator } from "src/modules/contrib/AllowedSessionsVal
 
 // Executors
 import { GuardianExecutor } from "src/modules/GuardianExecutor.sol";
-import { XsollaRecoveryExecutor } from "src/xsolla/modules/XsollaRecoveryExecutor.sol";
+import { GuardianBasedRecoveryExecutor } from "src/modules/contrib/GuardianBasedRecoveryExecutor.sol";
 
 // Fee collectors
 import { BaseFeeCollector } from "src/xsolla/collector/BaseFeeCollector.sol";
@@ -91,7 +91,7 @@ library Sources {
         SVGIconsLib,
         WebAuthnValidator,
         WETH9,
-        XsollaRecoveryExecutor,
+        GuardianBasedRecoveryExecutor,
         TransparentUpgradeableProxy,
         UpgradeableBeacon
     }
@@ -183,8 +183,8 @@ library Sources {
             return type(WebAuthnValidator).creationCode;
         }
         if (metaArtifact == Source.WETH9) return type(WETH9).creationCode;
-        if (metaArtifact == Source.XsollaRecoveryExecutor) {
-            return type(XsollaRecoveryExecutor).creationCode;
+        if (metaArtifact == Source.GuardianBasedRecoveryExecutor) {
+            return type(GuardianBasedRecoveryExecutor).creationCode;
         }
         if (metaArtifact == Source.TransparentUpgradeableProxy) {
             return type(TransparentUpgradeableProxy).creationCode;
@@ -268,8 +268,8 @@ library Sources {
             return type(WebAuthnValidator).name;
         }
         if (metaArtifact == Source.WETH9) return type(WETH9).name;
-        if (metaArtifact == Source.XsollaRecoveryExecutor) {
-            return type(XsollaRecoveryExecutor).name;
+        if (metaArtifact == Source.GuardianBasedRecoveryExecutor) {
+            return type(GuardianBasedRecoveryExecutor).name;
         }
         if (metaArtifact == Source.TransparentUpgradeableProxy) {
             return type(TransparentUpgradeableProxy).name;

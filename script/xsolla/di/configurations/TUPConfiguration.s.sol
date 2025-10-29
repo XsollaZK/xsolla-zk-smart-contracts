@@ -10,7 +10,7 @@ import { StdConfig } from "forge-std/StdConfig.sol";
 import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
 
-contract StdConfigBasedTUPConfiguration is IConfiguration {
+contract TUPConfiguration is IConfiguration {
     using ShortStrings for ShortString;
     using Sources for Sources.Source;
 
@@ -19,6 +19,7 @@ contract StdConfigBasedTUPConfiguration is IConfiguration {
     StdConfig private config;
     Vm private vm;
     Sources.Source private implementationSource;
+    bytes private initializationData;
 
     constructor(
         Vm _vm,
@@ -38,9 +39,17 @@ contract StdConfigBasedTUPConfiguration is IConfiguration {
         return "Simple TUP wrapper Configuration";
     }
 
+    function setInitializationData(bytes calldata data) external {
+        initializationData = data;
+    }
+
     function startAutowiringSources() external override {
         vm.broadcast();
-        address proxy = address(new TransparentUpgradeableProxy(implementation, proxyOwner, ""));
+        address proxy = address(
+            new TransparentUpgradeableProxy(
+                implementation, proxyOwner, initializationData.length > 0 ? initializationData : abi.encode("")
+            )
+        );
         config.set(getProxySourceKey(), proxy);
     }
 

@@ -16,8 +16,9 @@ import { Sources } from "xsolla/scripts/di/libraries/Sources.s.sol";
 import { IConfiguration } from "xsolla/scripts/di/interfaces/IConfiguration.s.sol";
 import { IWiringMechanism } from "xsolla/scripts/di/interfaces/IWiringMechanism.s.sol";
 import { StdConfigBasedWiring } from "xsolla/scripts/di/wiring/StdConfigBasedWiring.s.sol";
+import { TUPConfiguration } from "xsolla/scripts/di/configurations/TUPConfiguration.s.sol";
 
-contract StdConfigBasedEip4337FactoryConfiguration is IConfiguration {
+contract Eip4337FactoryConfiguration is IConfiguration {
     using ShortStrings for ShortString;
     using Sources for Sources.Source;
     using LibVariable for Variable;
@@ -44,12 +45,9 @@ contract StdConfigBasedEip4337FactoryConfiguration is IConfiguration {
         config.set(Sources.Source.UpgradeableBeacon.toString(), beacon);
         address factoryImpl = address(new MSAFactory(beacon));
         config.set(Sources.Source.MSAFactory.toString(), factoryImpl);
-        address factory = address(new TransparentUpgradeableProxy(factoryImpl, beaconOwner, ""));
-        config.set(
-            Sources.Source.TransparentUpgradeableProxy
-                .getFullNicknamedName(ShortStrings.toShortString(Sources.Source.MSAFactory.toString())),
-            factory
-        );
         vm.stopBroadcast();
+        TUPConfiguration tupConfig =
+            new TUPConfiguration(vm, config, beaconOwner, factoryImpl, Sources.Source.MSAFactory);
+        tupConfig.startAutowiringSources();
     }
 }

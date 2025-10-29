@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { LibERC7579 } from "solady/accounts/LibERC7579.sol";
 
-import { IExecutor, MODULE_TYPE_EXECUTOR, MODULE_TYPE_VALIDATOR } from "../interfaces/IERC7579Module.sol";
+import { IExecutor, IModule, MODULE_TYPE_EXECUTOR, MODULE_TYPE_VALIDATOR } from "../interfaces/IERC7579Module.sol";
 import { IMSA } from "../interfaces/IMSA.sol";
 import { WebAuthnValidator } from "./WebAuthnValidator.sol";
 import { EOAKeyValidator } from "./EOAKeyValidator.sol";
@@ -15,7 +16,7 @@ import { IERC7579Account } from "../interfaces/IERC7579Account.sol";
 /// @author Matter Labs
 /// @custom:security-contact security@matterlabs.dev
 /// @dev This contract allows account recovery using trusted guardians.
-contract GuardianExecutor is IExecutor {
+contract GuardianExecutor is IExecutor, IERC165 {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
     enum RecoveryType {
@@ -75,18 +76,18 @@ contract GuardianExecutor is IExecutor {
         eoaValidator = _eoaValidator;
     }
 
-    /// @notice Validator initiator for given sso account.
-    /// @dev This module does not support initialization on creation,
-    /// but ensures that the WebAuthValidator is enabled for calling SsoAccount.
+    /// @inheritdoc IModule
     function onInstall(bytes calldata) external view virtual { }
 
-    /// @notice Removes all past guardians when this module is disabled in a
-    /// account
+    /// @inheritdoc IModule
+    /// @notice Removes all past guardians when this module is disabled in a account
     function onUninstall(bytes calldata) external virtual {
         accountGuardians[msg.sender].clear();
         discardRecovery();
     }
 
+    /// @notice Propose a new guardian candidate for the caller's account.
+    /// @param newGuardian Address of the guardian to add after acceptance.
     function proposeGuardian(address newGuardian) external virtual {
         require(isInitialized(msg.sender), NotInitialized(msg.sender));
         require(newGuardian != address(0) && newGuardian != msg.sender, GuardianInvalidAddress(newGuardian));
@@ -98,6 +99,8 @@ contract GuardianExecutor is IExecutor {
         emit GuardianProposed(msg.sender, newGuardian);
     }
 
+    /// @notice Remove an existing guardian from the caller's account.
+    /// @param guardianToRemove Address of the guardian to remove.
     function removeGuardian(address guardianToRemove) external virtual {
         require(isInitialized(msg.sender), NotInitialized(msg.sender));
         require(accountGuardians[msg.sender].contains(guardianToRemove), GuardianNotFound(msg.sender, guardianToRemove));
@@ -116,6 +119,9 @@ contract GuardianExecutor is IExecutor {
         emit GuardianRemoved(msg.sender, guardianToRemove);
     }
 
+    /// @notice Accept a pending guardian proposal for a given account.
+    /// @param accountToGuard Account that requested the caller to become a guardian.
+    /// @return bool True if the guardian was activated, false if already active.
     function acceptGuardian(address accountToGuard) external virtual returns (bool) {
         require(isInitialized(accountToGuard), NotInitialized(accountToGuard));
         (bool exists, uint256 data) = accountGuardians[accountToGuard].tryGet(msg.sender);
@@ -137,23 +143,21 @@ contract GuardianExecutor is IExecutor {
         return true;
     }
 
+    /// @notice Begin the recovery process for an account using a specified validator type.
+    /// @param accountToRecover Account undergoing recovery.
+    /// @param recoveryType Validator type that will regain access.
+    /// @param data ABI-encoded payload forwarded to the validator.
     function initializeRecovery(address accountToRecover, RecoveryType recoveryType, bytes calldata data)
         external
         virtual
         onlyGuardianOf(accountToRecover)
     {
-        require(isInitialized(accountToRecover), NotInitialized(accountToRecover));
-        checkInstalledValidator(accountToRecover, recoveryType);
-        uint256 pendingRecoveryTimestamp = pendingRecovery[accountToRecover].timestamp;
-        require(
-            pendingRecoveryTimestamp == 0 || pendingRecoveryTimestamp + REQUEST_VALIDITY_TIME < block.timestamp,
-            RecoveryInProgress(accountToRecover)
-        );
-        RecoveryRequest memory recovery = RecoveryRequest(recoveryType, data, uint48(block.timestamp));
-        pendingRecovery[accountToRecover] = recovery;
-        emit RecoveryInitiated(accountToRecover, msg.sender, recovery);
+        _initializeRecovery(accountToRecover, recoveryType, data);
     }
 
+    /// @dev Ensure the appropriate validator module is installed for the requested recovery.
+    /// @param account Account to inspect.
+    /// @param recoveryType Recovery flow type being requested.
     function checkInstalledValidator(address account, RecoveryType recoveryType) internal view {
         // slither-disable-start incorrect-equality
         if (recoveryType == RecoveryType.EOA) {
@@ -172,7 +176,88 @@ contract GuardianExecutor is IExecutor {
         // slither-disable-end incorrect-equality
     }
 
+    /// @notice Finalize a pending recovery after the delay has elapsed.
+    /// @param account Account that requested recovery.
+    /// @return returnData ABI-encoded response from validator execution.
     function finalizeRecovery(address account) external virtual returns (bytes memory returnData) {
+        return _finalizeRecovery(account);
+    }
+
+    /// @notice List all guardians configured for an account.
+    /// @param account Account to inspect.
+    /// @return Array of guardian addresses.
+    function guardiansFor(address account) external view returns (address[] memory) {
+        return accountGuardians[account].keys();
+    }
+
+    /// @notice Get the status of a specific guardian for an account.
+    /// @param account Account to inspect.
+    /// @param guardian Guardian address to check.
+    /// @return isPresent True if the guardian is configured for the account.
+    /// @return isActive True if the guardian is active.
+    /// @return addedAt Timestamp when the guardian was proposed.
+    function guardianStatusFor(address account, address guardian)
+        external
+        view
+        returns (bool isPresent, bool isActive, uint48 addedAt)
+    {
+        uint256 data;
+        (isPresent, data) = accountGuardians[account].tryGet(guardian);
+        if (isPresent) {
+            (isActive, addedAt) = _unpackGuardianData(data);
+        }
+    }
+
+    /// @notice Cancel any ongoing recovery process for the caller's account.
+    function discardRecovery() public virtual {
+        RecoveryRequest memory recovery = pendingRecovery[msg.sender];
+        delete pendingRecovery[msg.sender];
+        if (recovery.timestamp != 0 && recovery.data.length != 0) {
+            emit RecoveryDiscarded(msg.sender);
+        }
+    }
+
+    function _packGuardianData(bool isActive, uint48 addedAt) internal pure returns (uint256) {
+        return (isActive ? 1 : 0) | (uint256(addedAt) << 1);
+    }
+
+    function _unpackGuardianData(uint256 data) internal pure returns (bool isActive, uint48 addedAt) {
+        isActive = (data & 1) != 0;
+        addedAt = uint48(data >> 1);
+    }
+
+    /// @inheritdoc IModule
+    function isModuleType(uint256 moduleType) external pure returns (bool) {
+        return moduleType == MODULE_TYPE_EXECUTOR;
+    }
+
+    /// @inheritdoc IModule
+    function isInitialized(address account) public view returns (bool) {
+        return IMSA(account).isModuleInstalled(MODULE_TYPE_EXECUTOR, address(this), "");
+    }
+
+    /// @inheritdoc IERC165
+    function supportsInterface(bytes4 interfaceId) external pure virtual returns (bool) {
+        return interfaceId == type(IExecutor).interfaceId || interfaceId == type(IModule).interfaceId
+            || interfaceId == type(IERC165).interfaceId;
+    }
+
+    /// @dev Internal helper to start a recovery process.
+    function _initializeRecovery(address accountToRecover, RecoveryType recoveryType, bytes calldata data) internal {
+        require(isInitialized(accountToRecover), NotInitialized(accountToRecover));
+        checkInstalledValidator(accountToRecover, recoveryType);
+        uint256 pendingRecoveryTimestamp = pendingRecovery[accountToRecover].timestamp;
+        require(
+            pendingRecoveryTimestamp == 0 || pendingRecoveryTimestamp + REQUEST_VALIDITY_TIME < block.timestamp,
+            RecoveryInProgress(accountToRecover)
+        );
+        RecoveryRequest memory recovery = RecoveryRequest(recoveryType, data, uint48(block.timestamp));
+        pendingRecovery[accountToRecover] = recovery;
+        emit RecoveryInitiated(accountToRecover, msg.sender, recovery);
+    }
+
+    /// @dev Internal helper to finalize a recovery process.
+    function _finalizeRecovery(address account) internal returns (bytes memory returnData) {
         RecoveryRequest memory recovery = pendingRecovery[account];
         checkInstalledValidator(account, recovery.recoveryType);
         require(recovery.timestamp != 0 && recovery.data.length != 0, NoRecoveryInProgress(account));
@@ -198,44 +283,6 @@ contract GuardianExecutor is IExecutor {
         emit RecoveryFinished(account);
     }
 
-    function guardiansFor(address account) external view returns (address[] memory) {
-        return accountGuardians[account].keys();
-    }
-
-    function guardianStatusFor(address account, address guardian)
-        external
-        view
-        returns (bool isPresent, bool isActive, uint48 addedAt)
-    {
-        uint256 data;
-        (isPresent, data) = accountGuardians[account].tryGet(guardian);
-        if (isPresent) {
-            (isActive, addedAt) = _unpackGuardianData(data);
-        }
-    }
-
-    function discardRecovery() public virtual {
-        RecoveryRequest memory recovery = pendingRecovery[msg.sender];
-        delete pendingRecovery[msg.sender];
-        if (recovery.timestamp != 0 && recovery.data.length != 0) {
-            emit RecoveryDiscarded(msg.sender);
-        }
-    }
-
-    function _packGuardianData(bool isActive, uint48 addedAt) internal pure returns (uint256) {
-        return (isActive ? 1 : 0) | (uint256(addedAt) << 1);
-    }
-
-    function _unpackGuardianData(uint256 data) internal pure returns (bool isActive, uint48 addedAt) {
-        isActive = (data & 1) != 0;
-        addedAt = uint48(data >> 1);
-    }
-
-    function isModuleType(uint256 moduleType) external pure returns (bool) {
-        return moduleType == MODULE_TYPE_EXECUTOR;
-    }
-
-    function isInitialized(address account) public view returns (bool) {
-        return IMSA(account).isModuleInstalled(MODULE_TYPE_EXECUTOR, address(this), "");
-    }
+    // Reserve storage space for upgradeability.
+    uint256[50] private __gap;
 }
