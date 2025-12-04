@@ -102,7 +102,10 @@ contract ERC1155FactoryFuzzTest is Test {
 
         // Attempt invalid operations with random data
         (bool success,) = factoryAddress.call(abi.encode(randomData));
+        // Silencing warning
+        success;
         // Call may succeed or fail, but factory should remain unchanged
+        
 
         // Verify factory state unchanged
         uint256 finalCodeSize;
