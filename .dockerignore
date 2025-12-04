@@ -1,0 +1,12 @@
+node_modules
+cache
+out
+broadcast
+.git
+.github
+*.log
+.env
+.env.*
+dist
+build
+coverage

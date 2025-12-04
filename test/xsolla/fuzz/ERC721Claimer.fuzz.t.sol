@@ -83,8 +83,18 @@ contract ERC721ClaimerFuzzTest is Test {
         // Validate inputs and calculate totals
         for (uint256 i = 0; i < 5; i++) {
             if (claimants[i] != address(0) && claimants[i].code.length == 0 && amounts[i] > 0 && amounts[i] <= 20) {
-                totalAmount += amounts[i];
-                validClaimants++;
+                // Check for duplicates
+                bool isDuplicate = false;
+                for (uint256 j = 0; j < i; j++) {
+                    if (claimants[i] == claimants[j]) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+                if (!isDuplicate) {
+                    totalAmount += amounts[i];
+                    validClaimants++;
+                }
             }
         }
 
@@ -93,7 +103,7 @@ contract ERC721ClaimerFuzzTest is Test {
 
         // Process claims
         for (uint256 i = 0; i < 5; i++) {
-            if (claimants[i] != address(0) && claimants[i].code.length == 0 && amounts[i] > 0 && amounts[i] <= 20) {
+            if (claimants[i] != address(0) && claimants[i].code.length == 0 && amounts[i] > 0 && amounts[i] <= 20 && !claimer.isClaimed(claimants[i])) {
                 claimer.setAmountToClaim(amounts[i]);
 
                 vm.prank(claimants[i]);

@@ -121,6 +121,9 @@ contract FaucetFuzzTest is Test {
     }
 
     function testFuzz_ChangePortion_RevertSameValue(uint256 samePortion) public {
+        uint256 initialPortion = faucet.portion();
+        vm.assume(samePortion != initialPortion);
+        
         faucet.changePortion(samePortion);
 
         vm.expectRevert(Faucet.SamePortionValue.selector);

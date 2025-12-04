@@ -32,12 +32,13 @@ solady = "0.1.24"
 forge-std = { version = "master-06-10-2025", git = "https://github.com/foundry-rs/forge-std", rev = "17a9b2398a7d629931dc66a168a098d051d53dc6" }
 "@openzeppelin-contracts-upgradeable" = "5.5.0-rc.1"
 
-[lint]
+[profile.lint]
 lint_on_build = true
-severity = ["high", "med"]
-
-[fuzz]
-failure_persist_file="/test/fuzz_failures.txt"
-
-[invariant]
-failure_persist_dir="/test/invariant_failures.txt"
+severity = ["high", "med", "low", "info"]
+exclude_lints = [
+    "pascal-case-struct",
+    "mixed-case-function",
+    "mixed-case-variable",
+    "screaming-snake-case-const",
+    "screaming-snake-case-immutable"
+]

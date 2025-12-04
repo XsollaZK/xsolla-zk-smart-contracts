@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 
 import { SessionLib } from "src/libraries/SessionLib.sol";
 import { SessionKeyValidator } from "../SessionKeyValidator.sol";
-import { IValidator, IModule, MODULE_TYPE_VALIDATOR } from "src/interfaces/IERC7579Module.sol";
+import { IValidator, IModule } from "src/interfaces/IERC7579Module.sol";
 
 /// @title AllowedSessionsValidator
 /// @author Oleg Bedrin - <o.bedrin@xsolla.com> - Xsolla Special Initiatives
 /// @custom:security-contact security@matterlabs.dev and o.bedrin@xsolla.com
-/// @notice This contract is used to manage allowed sessions for a smart
-/// account. @notice This module is controlled by a single entity, which has the
-/// power
-/// to close all current sessions and disallow any future sessions on this
-/// module.
+/// @notice This contract is used to manage allowed sessions for a smart account.
+/// @notice This module is controlled by a single entity, which has the power
+/// to close all current sessions and disallow any future sessions on this module.
+/// @dev This contract has been designed without upgradability in mind.
 contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     using SessionLib for SessionLib.SessionStorage;
 
@@ -84,12 +82,17 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
 
     /// @notice Create a new session for an account.
     /// @param sessionSpec The session specification to create a session with.
-    /// @dev A session is a temporary authorization for an account to perform
-    /// specific actions, defined by the session specification.
-    function _createSession(SessionLib.SessionSpec memory sessionSpec) internal virtual override(SessionKeyValidator) {
+    /// @param proof Signature of the session owner to prove address ownership.
+    /// @dev A session is a temporary authorization for an account to perform specific actions, defined by the session
+    /// specification.
+    function _createSession(SessionLib.SessionSpec memory sessionSpec, bytes memory proof)
+        internal
+        virtual
+        override(SessionKeyValidator)
+    {
         bytes32 sessionActionsHash = getSessionActionsHash(sessionSpec);
         require(areSessionActionsAllowed[sessionActionsHash], SessionLib.ActionsNotAllowed(sessionActionsHash));
-        SessionKeyValidator._createSession(sessionSpec);
+        SessionKeyValidator._createSession(sessionSpec, proof);
     }
 
     /// @inheritdoc SessionKeyValidator
@@ -100,7 +103,7 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
         returns (bool)
     {
         return interfaceId == type(IERC165).interfaceId || interfaceId == type(IValidator).interfaceId
-            || interfaceId == type(IAccessControl).interfaceId;
+            || interfaceId == type(IModule).interfaceId || interfaceId == type(IAccessControl).interfaceId;
     }
 
     /// @notice Validate a session transaction for an account.
@@ -111,7 +114,7 @@ contract AllowedSessionsValidator is SessionKeyValidator, AccessControl {
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash) public override returns (uint256) {
         // slither-disable-next-line unused-return
         (, SessionLib.SessionSpec memory spec,) =
-            abi.decode(userOp.signature[20:], (bytes, SessionLib.SessionSpec, uint48[]));
+            abi.decode(userOp.signature, (bytes, SessionLib.SessionSpec, uint48[]));
         bytes32 sessionActionsHash = getSessionActionsHash(spec);
         require(areSessionActionsAllowed[sessionActionsHash], SessionLib.ActionsNotAllowed(sessionActionsHash));
         return SessionKeyValidator.validateUserOp(userOp, userOpHash);

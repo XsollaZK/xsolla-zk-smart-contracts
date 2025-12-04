@@ -5,11 +5,16 @@
   "main": "index.js",
   "scripts": {
     "bundler": "alto --config ./alto.json",
+    "bundler:with-proxy": "node js/bundler-with-proxy.js",
+    "bundler:zksync-os": "alto --config ./alto-zksync-os.json",
+    "bundler-proxy": "node js/bundler-proxy.js",
     "test": "node --test --import tsx --test-concurrency=1 test/integration/*.test.ts",
+    "test:zksync-os": "CHAIN_ID=6565 PORT=3050 node --test --import tsx --test-concurrency=1 test/integration/*.test.ts",
     "anvil": "anvil --fork-url https://reth-ethereum.ithaca.xyz/rpc --chain-id 1337",
     "coverage": "forge coverage --ir-minimum --no-match-coverage 'script|test'",
     "//": "Uses the last private key of anvil's rich accounts list",
-    "deploy-test": "forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --sig 'deployAll()'"
+    "deploy-test": "forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --sig 'deployAll()'",
+    "deploy-test:zksync-os": "forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:3050 --broadcast --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6 --sig 'deployAll()'"
   },
   "keywords": [
     "zksync",
@@ -18,7 +23,7 @@
   ],
   "author": "Matter Labs <zksync.io> & Oleg Bedrin <o.bedrin@xsolla.com>",
   "license": "MIT",
-  "packageManager": "pnpm@10.18.0+sha512.e804f889f1cecc40d572db084eec3e4881739f8dec69c0ff10d2d1beff9a4e309383ba27b5b750059d7f4c149535b6cd0d2cb1ed3aeb739239a4284a68f40cfa",
+  "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@pimlico/alto": "^0.0.19",
     "@types/node": "^24.3.0",

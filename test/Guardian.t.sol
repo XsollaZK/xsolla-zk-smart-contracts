@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 
 import { ModularSmartAccount } from "src/ModularSmartAccount.sol";
-import { MSAFactory } from "src/MSAFactory.sol";
-import { EOAKeyValidator } from "src/modules/EOAKeyValidator.sol";
-import { SessionKeyValidator } from "src/modules/SessionKeyValidator.sol";
-import { IMSA } from "src/interfaces/IMSA.sol";
 import { MODULE_TYPE_EXECUTOR } from "src/interfaces/IERC7579Module.sol";
 import { IERC7579Account } from "src/interfaces/IERC7579Account.sol";
 import { GuardianExecutor } from "src/modules/GuardianExecutor.sol";
@@ -66,11 +62,9 @@ contract GuardianTest is MSATest {
         vm.assertEq(guardians.length, 1, "Invalid guardians array");
         vm.assertEq(guardians[0], guardian.addr, "Guardian not found for account");
 
-        (bool isPresent, bool isActive, uint48 timestamp) =
-            guardiansExecutor.guardianStatusFor(address(account), guardian.addr);
+        (bool isPresent, bool isActive) = guardiansExecutor.guardianStatusFor(address(account), guardian.addr);
         vm.assertTrue(isPresent, "Guardian not present after proposing");
         vm.assertTrue(!isActive, "Proposed guardian should not be active");
-        vm.assertTrue(timestamp != 0, "Proposed guardian timestamp is empty");
     }
 
     function test_acceptGuardian() public {
@@ -81,7 +75,7 @@ contract GuardianTest is MSATest {
         emit GuardianExecutor.GuardianAdded(address(account), guardian.addr);
         guardiansExecutor.acceptGuardian(address(account));
 
-        (, bool isActive,) = guardiansExecutor.guardianStatusFor(address(account), guardian.addr);
+        (, bool isActive) = guardiansExecutor.guardianStatusFor(address(account), guardian.addr);
         vm.assertTrue(isActive, "Guardian not active after accepting");
     }
 
@@ -92,15 +86,15 @@ contract GuardianTest is MSATest {
 
         vm.prank(guardian.addr);
         vm.expectEmit(true, true, true, false); // don't check data
-        emit GuardianExecutor.RecoveryInitiated(address(account), guardian.addr, recovery);
+        emit GuardianExecutor.RecoveryInitiated(address(account), guardian.addr, recovery, "data");
         guardiansExecutor.initializeRecovery(
             address(account), GuardianExecutor.RecoveryType.EOA, abi.encode(newOwner.addr)
         );
 
-        (GuardianExecutor.RecoveryType recoveryType, bytes memory data, uint256 timestamp) =
+        (GuardianExecutor.RecoveryType recoveryType, bytes32 hashedData, uint256 timestamp) =
             guardiansExecutor.pendingRecovery(address(account));
         vm.assertEq(uint256(recoveryType), uint256(GuardianExecutor.RecoveryType.EOA), "Invalid recovery type");
-        vm.assertEq(abi.decode(data, (address)), newOwner.addr, "Invalid recovery data");
+        vm.assertEq(hashedData, keccak256(abi.encode(newOwner.addr)), "Invalid recovery data");
         vm.assertTrue(timestamp != 0, "Recovery timestamp is empty");
     }
 
@@ -112,7 +106,7 @@ contract GuardianTest is MSATest {
         vm.prank(guardian.addr);
         vm.expectEmit(true, true, true, true);
         emit GuardianExecutor.RecoveryFinished(address(account));
-        guardiansExecutor.finalizeRecovery(address(account));
+        guardiansExecutor.finalizeRecovery(address(account), abi.encode(newOwner.addr));
 
         vm.assertTrue(eoaValidator.isOwnerOf(address(account), newOwner.addr), "New owner was not added");
 
@@ -133,14 +127,14 @@ contract GuardianTest is MSATest {
         test_initRecovery();
         vm.prank(guardian.addr);
         vm.expectPartialRevert(GuardianExecutor.RecoveryTimestampInvalid.selector);
-        guardiansExecutor.finalizeRecovery(address(account));
+        guardiansExecutor.finalizeRecovery(address(account), abi.encode(newOwner.addr));
     }
 
     function assertPendingRecoveryCleared() internal view {
-        (GuardianExecutor.RecoveryType recoveryType, bytes memory data, uint256 timestamp) =
+        (GuardianExecutor.RecoveryType recoveryType, bytes32 hashedData, uint256 timestamp) =
             guardiansExecutor.pendingRecovery(address(account));
         vm.assertEq(uint256(recoveryType), uint256(GuardianExecutor.RecoveryType.None), "Recovery type not cleared");
-        vm.assertEq(data.length, 0, "Recovery data not cleared");
+        vm.assertEq(hashedData, 0, "Recovery data not cleared");
         vm.assertEq(timestamp, 0, "Recovery timestamp not cleared");
     }
 }

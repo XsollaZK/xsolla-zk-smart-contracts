@@ -8,8 +8,6 @@ import {
     concat,
     type Hex,
     type Address,
-    type WalletClient,
-    type PublicClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createBundlerClient } from "viem/account-abstraction";
@@ -17,8 +15,16 @@ import { localhost } from "viem/chains";
 
 import crypto from "crypto";
 
+export function chainId() {
+    return Number(process.env.CHAIN_ID || '1337');
+}
+
+export function rpcPort() {
+    return Number(process.env.PORT || '8545');
+}
+
 export function contractAddresses() {
-    const txs = require('../../broadcast/Deploy.s.sol/1337/deployAll-latest.json').transactions;
+    const txs = require(`../../broadcast/Deploy.s.sol/${chainId()}/deployAll-latest.json`).transactions;
     return {
         eoaValidator: txs[1].contractAddress as Address,
         sessionValidator: txs[3].contractAddress as Address,
@@ -32,6 +38,9 @@ export function contractAddresses() {
 export function createClients(anvilPort: number, bundlerPort: number) {
     // smaller polling interval to speed up the test
     const pollingInterval = 100;
+
+    // @ts-ignore
+    localhost.id = chainId();
 
     const client = createPublicClient({
         chain: localhost,
@@ -59,7 +68,7 @@ export async function deployContract(client: any, privateKey: Hex, name: string)
         abi: [],
         bytecode: require(`../../out/${name}.sol/${name}.json`).bytecode.object
     });
-    const deployment = await client.waitForTransactionReceipt({ hash: deploymentHash, timeout: 100 });
+    const deployment = await client.waitForTransactionReceipt({ hash: deploymentHash, timeout: 2_000 });
     return deployment.contractAddress!;
 }
 
@@ -142,4 +151,21 @@ export function toPasskeySigner(privateKey: crypto.KeyObject, credentialId: Hex)
         ]);
         return concat([webauthnValidator, fatSignature]);
     }
+}
+
+// to run:
+// pnpm tsx test/integration/utils.ts --hash <HASH>
+const hashIndex = process.argv.indexOf('--hash');
+if (hashIndex !== -1) {
+    const hash = process.argv[hashIndex + 1] as Hex;
+    if (!hash.startsWith('0x') || hash.length !== 66) {
+        console.error('Invalid hash');
+        process.exit(1);
+    }
+    const credentialId = '0x2868baa08431052f6c7541392a458f64';
+    // const publicKey = {"x":"0xe0a43b9c64a2357ea7f66a0551f57442fbd32031162d9be762800864168fae40","y":"0x450875e2c28222e81eb25ae58d095a3e7ca295faa3fc26fb0e558a0b571da501"};
+    // spellchecker:ignore-next-line
+    const privateKeyJSON: crypto.JsonWebKey = {"kty":"EC","x":"4KQ7nGSiNX6n9moFUfV0QvvTIDEWLZvnYoAIZBaPrkA","y":"RQh14sKCIugeslrljQlaPnyilfqj_Cb7DlWKC1cdpQE","crv":"P-256","d":"mVCuyGzW2iB7wl2Lt3waJHHzWmtc6W-lzzIvjgHVA8U"};
+    const privateKey = crypto.createPrivateKey({key: privateKeyJSON, format: 'jwk'});
+    toPasskeySigner(privateKey, credentialId)(hash).then(console.log)
 }

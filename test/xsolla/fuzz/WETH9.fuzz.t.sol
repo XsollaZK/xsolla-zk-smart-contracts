@@ -63,6 +63,7 @@ contract WETH9FuzzTest is Test {
 
     function testFuzz_TransferFrom(address from, address to, uint256 amount) public {
         vm.assume(from != address(0) && to != address(0) && from != to);
+        vm.assume(to != address(weth) && from != address(weth));
         vm.assume(amount > 0 && amount <= type(uint128).max);
         vm.deal(from, amount);
 

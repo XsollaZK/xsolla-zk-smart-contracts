@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import { SessionLib } from "../libraries/SessionLib.sol";
 import { PackedUserOperation } from "account-abstraction/interfaces/PackedUserOperation.sol";
 import { _packValidationData, SIG_VALIDATION_FAILED } from "account-abstraction/core/Helpers.sol";
 
+import { SessionLib } from "../libraries/SessionLib.sol";
+import { RegistryAdapter } from "../core/RegistryAdapter.sol";
 import { IMSA } from "../interfaces/IMSA.sol";
-import "../interfaces/IERC7579Module.sol";
+import { IModule, IValidator } from "../interfaces/IERC7579Module.sol";
+import "../interfaces/IERC7579Module.sol" as ERC7579;
 
 /// @title SessionKeyValidator
 /// @author Matter Labs
@@ -46,22 +48,14 @@ contract SessionKeyValidator is IValidator, IERC165 {
     }
 
     /// @inheritdoc IModule
-    /// @param data ABI-encoded session specification to immediately create a session, or empty if not needed.
-    function onInstall(bytes calldata data) external virtual {
-        if (data.length > 0) {
-            // This always either succeeds with `true` or reverts within,
-            // so we don't need to check the return value.
-            SessionLib.SessionSpec memory sessionSpec = abi.decode(data, (SessionLib.SessionSpec));
-            _createSession(sessionSpec);
-        }
-    }
+    function onInstall(bytes calldata) external virtual { }
 
     /// @inheritdoc IModule
     /// @notice Revokes the provided sessions before uninstalling.
     function onUninstall(bytes calldata data) external virtual {
         // Revoke keys before uninstalling
         bytes32[] memory sessionHashes = abi.decode(data, (bytes32[]));
-        for (uint256 i = 0; i < sessionHashes.length; i++) {
+        for (uint256 i = 0; i < sessionHashes.length; ++i) {
             revokeKey(sessionHashes[i]);
         }
     }
@@ -88,28 +82,29 @@ contract SessionKeyValidator is IValidator, IERC165 {
     /// @return true if the call is banned, false otherwise
     function isBannedCall(address target, bytes4 selector) internal view virtual returns (bool) {
         return target == address(this) // this line is technically unnecessary
-            || target == address(msg.sender) || IMSA(msg.sender).isModuleInstalled(MODULE_TYPE_VALIDATOR, target, "")
-            || IMSA(msg.sender).isModuleInstalled(MODULE_TYPE_EXECUTOR, target, "")
-            || IMSA(msg.sender).isModuleInstalled(MODULE_TYPE_FALLBACK, target, abi.encode(selector));
+            || target == address(msg.sender)
+            || IMSA(msg.sender).isModuleInstalled(ERC7579.MODULE_TYPE_VALIDATOR, target, "")
+            || IMSA(msg.sender).isModuleInstalled(ERC7579.MODULE_TYPE_EXECUTOR, target, "")
+            || IMSA(msg.sender).isModuleInstalled(ERC7579.MODULE_TYPE_FALLBACK, target, abi.encode(selector))
+            || target == address(RegistryAdapter(msg.sender).getRegistry());
     }
 
     /// @notice Create a new session for an account
     /// @param sessionSpec The session specification to create a session with
-    /// @dev In the sessionSpec, callPolicies should not have duplicated
-    /// instances of (target, selector) pairs. Only the first one of the
-    /// duplicates is considered when validating transactions.
-    function createSession(SessionLib.SessionSpec memory sessionSpec) public virtual {
+    /// @param proof Signature of the session owner to prove address ownership
+    /// @dev In the sessionSpec, callPolicies should not have duplicated instances of (target, selector) pairs.
+    /// Only the first one of the duplicates is considered when validating transactions.
+    function createSession(SessionLib.SessionSpec calldata sessionSpec, bytes calldata proof) external virtual {
         require(isInitialized(msg.sender), NotInitialized(msg.sender));
-        _createSession(sessionSpec);
+        _createSession(sessionSpec, proof);
     }
 
-    /// @notice Same as `createSession`, but does not check if the validator is
-    /// initialized for the account.
-    function _createSession(SessionLib.SessionSpec memory sessionSpec) internal virtual {
+    /// @notice Same as `createSession`, but does not check if the validator is initialized for the account.
+    function _createSession(SessionLib.SessionSpec memory sessionSpec, bytes memory proof) internal virtual {
         bytes32 sessionHash = keccak256(abi.encode(sessionSpec));
 
         uint256 totalCallPolicies = sessionSpec.callPolicies.length;
-        for (uint256 i = 0; i < totalCallPolicies; i++) {
+        for (uint256 i = 0; i < totalCallPolicies; ++i) {
             require(
                 !isBannedCall(sessionSpec.callPolicies[i].target, sessionSpec.callPolicies[i].selector),
                 SessionLib.CallPolicyBanned(sessionSpec.callPolicies[i].target, sessionSpec.callPolicies[i].selector)
@@ -117,6 +112,9 @@ contract SessionKeyValidator is IValidator, IERC165 {
         }
 
         require(sessionSpec.signer != address(0), SessionLib.ZeroSigner());
+        // Check address ownership to prevent DoS (since we only allow unique signers)
+        address recovered = ECDSA.recover(keccak256(abi.encode(sessionHash, msg.sender)), proof);
+        require(recovered == sessionSpec.signer, SessionLib.InvalidSigner(recovered, sessionSpec.signer));
         // Avoid using same session key for multiple sessions, contract-wide
         require(sessionSigner[sessionSpec.signer] == bytes32(0), SessionLib.SignerAlreadyUsed(sessionSpec.signer));
         require(sessionSpec.feeLimit.limitType != SessionLib.LimitType.Unlimited, SessionLib.UnlimitedFees());
@@ -150,45 +148,45 @@ contract SessionKeyValidator is IValidator, IERC165 {
     /// @notice Revoke multiple sessions for an account
     /// @param sessionHashes An array of session hashes to revoke
     function revokeKeys(bytes32[] calldata sessionHashes) external virtual {
-        for (uint256 i = 0; i < sessionHashes.length; i++) {
+        for (uint256 i = 0; i < sessionHashes.length; ++i) {
             revokeKey(sessionHashes[i]);
         }
     }
 
     /// @inheritdoc IModule
     function isInitialized(address smartAccount) public view virtual returns (bool) {
-        return IMSA(smartAccount).isModuleInstalled(MODULE_TYPE_VALIDATOR, address(this), "");
+        return IMSA(smartAccount).isModuleInstalled(ERC7579.MODULE_TYPE_VALIDATOR, address(this), "");
     }
 
     /// @inheritdoc IValidator
     /// @dev Session spec and period IDs must be provided as validator data.
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash) public virtual returns (uint256) {
         (bytes memory transactionSignature, SessionLib.SessionSpec memory spec, uint48[] memory periodIds) =
-            abi.decode(userOp.signature[20:], (bytes, SessionLib.SessionSpec, uint48[]));
+            abi.decode(userOp.signature, (bytes, SessionLib.SessionSpec, uint48[]));
         require(spec.signer != address(0), SessionLib.ZeroSigner());
         bytes32 sessionHash = keccak256(abi.encode(spec));
         uint192 nonceKey = uint192(userOp.nonce >> 64);
         uint192 expectedNonceKey = uint192(uint160(spec.signer));
         require(nonceKey == expectedNonceKey, SessionLib.InvalidNonceKey(nonceKey, expectedNonceKey));
         // this will revert if session spec is violated
-        (uint48 validAfter, uint48 validUntil) = sessions[sessionHash].validate(userOp, spec, periodIds);
+        uint48[2] memory timeRange = sessions[sessionHash].validate(userOp, spec, periodIds);
 
         // slither-disable-next-line unused-return
         (address signer, ECDSA.RecoverError err,) = ECDSA.tryRecover(userOpHash, transactionSignature);
-        if (err != ECDSA.RecoverError.NoError || signer == address(0) || signer != spec.signer) {
+        if (err != ECDSA.RecoverError.NoError || signer != spec.signer) {
             return SIG_VALIDATION_FAILED;
         }
-        // This check is separate and performed last to prevent gas estimation
-        // failures
-        (uint48 newValidAfter, uint48 newValidUntil) =
-            sessions[sessionHash].validateFeeLimit(userOp, spec, periodIds[0]);
-        validAfter = newValidAfter > validAfter ? validAfter : newValidAfter;
-        validUntil = newValidUntil < validUntil ? validUntil : newValidUntil;
-        return _packValidationData(false, validUntil, validAfter);
+        // This check is separate and performed last to prevent gas estimation failures
+        timeRange =
+            SessionLib.shrinkRange(timeRange, sessions[sessionHash].validateFeeLimit(userOp, spec, periodIds[0]));
+        return _packValidationData(false, timeRange[1], timeRange[0]);
     }
 
     /// @inheritdoc IModule
     function isModuleType(uint256 moduleTypeId) external pure virtual returns (bool) {
-        return moduleTypeId == MODULE_TYPE_VALIDATOR;
+        return moduleTypeId == ERC7579.MODULE_TYPE_VALIDATOR;
     }
+
+    // Reserve storage space for upgradeability.
+    uint256[50] private __gap;
 }
