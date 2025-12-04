@@ -31,3 +31,9 @@ version = "0.1.24"
 url = "https://soldeer-revisions.s3.amazonaws.com/solady/0_1_24_19-07-2025_09:00:29_solady.zip"
 checksum = "a6334e570ccad70db346627ccf2208a5e02d3bbb2f4b65209c737e7a872c0089"
 integrity = "3b1510fd0eb5768d7054a49c72fb8bc1a8f03580e6d810f45465e11d32ed2d03"
+
+[[dependencies]]
+name = "zksync-os"
+version = "master-04-12-2025"
+git = "git@github.com:matter-labs/zksync-sso-contracts.git"
+rev = "03f2ceaac1ea0de7426891d6cfe22649e43346ec"

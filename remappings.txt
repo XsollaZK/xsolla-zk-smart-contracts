@@ -3,4 +3,4 @@
 account-abstraction/=dependencies/eth-infinitism-account-abstraction-0.8.0/contracts
 forge-std/=dependencies/forge-std-master-06-10-2025/src
 solady/=dependencies/solady-0.1.24/src
-xsolla/scripts/=script/xsolla/
+zksync-os/=dependencies/zksync-os-master-04-12-2025/

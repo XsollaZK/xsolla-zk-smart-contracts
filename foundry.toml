@@ -31,6 +31,7 @@ eth-infinitism-account-abstraction = "0.8.0"
 solady = "0.1.24"
 forge-std = { version = "master-06-10-2025", git = "https://github.com/foundry-rs/forge-std", rev = "17a9b2398a7d629931dc66a168a098d051d53dc6" }
 "@openzeppelin-contracts-upgradeable" = "5.5.0-rc.1"
+zksync-os = { version = "master-04-12-2025", git = "git@github.com:matter-labs/zksync-sso-contracts.git", rev = "03f2ceaac1ea0de7426891d6cfe22649e43346ec" }
 
 [profile.lint]
 lint_on_build = true
