@@ -1,5 +1,5 @@
 build:
-  stage: test
+  stage: build
   image: ghcr.io/foundry-rs/foundry:latest
   tags:
     - docker
@@ -12,7 +12,7 @@ build:
     - forge test
 
 build_container:
-  stage: dockerize
+  stage: deploy
   image: docker:29.0.4
   tags:
     - dind
